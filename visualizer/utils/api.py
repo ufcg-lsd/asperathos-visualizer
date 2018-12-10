@@ -80,8 +80,6 @@ class Rest(flask.Blueprint):
                     return access_denied(e)
                 except ex.BadRequestException as e:
                     return bad_request(e)
-                except ex.SaharaException as e:
-                    return bad_request(e)
                 except Exception as e:
                     return internal_error(500, 'Internal Server Error', e)
 
@@ -123,6 +121,7 @@ def render(res=None, resp_type=None, status=None, **kwargs):
                       "Non-dict and non-empty kwargs passed to render")
 
     status_code = getattr(flask.request, 'status_code', None)
+
     if status:
         status_code = status
     if not status_code:
