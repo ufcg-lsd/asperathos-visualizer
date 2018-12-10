@@ -19,13 +19,20 @@ from visualizer.service.api import v10 as api
 
 rest = u.Rest('v10', __name__)
 
+""" Start the visualization of a running application.
 
-""" Returns the url of the visualizer monitoring the job.
+    Normal response codes: 202
+    Error response codes: 400
+"""
+@rest.post('/visualizing/<app_id>')
+def start_visualization(data, app_id):
+    return u.render(api.start_visualization(data, app_id))
+
+""" Returns the url of the visualizer of the job.
                                                                               
     Normal response codes: 200
     Error response codes: 400
 """
-@rest.get('/submissions/<submission_id>/visualizer')
-def get_visualizer_url(submission_id):
-    return "URL!"
-    #return u.render(api.visualizer_url(submission_id))
+@rest.get('/visualizing/<app_id>')
+def get_visualizer_url(app_id):
+    return u.render(api.visualizer_url(app_id))

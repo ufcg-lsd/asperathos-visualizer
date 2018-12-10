@@ -19,50 +19,48 @@ from visualizer.utils.logger import Log
 # from broker.utils.framework import authorizer
 # from broker.utils.framework import optimizer
 from visualizer import exceptions as ex
+from visualizer.plugins.builder import VisualizerBuilder
 
 
 API_LOG = Log("APIv10", "logs/APIv10.log")
 
-submissions = {}
+visualized_apps = {}
+builder = VisualizerBuilder()
 
-def submission_log(submission_id):
-    pass
-    # if submission_id not in submissions.keys():
-    #     API_LOG.log("Wrong request")
-    #     raise ex.BadRequestException()
-
-    # logs = {'execution':'', 'stderr':'', 'stdout': ''}
-
-    # exec_log = open("logs/apps/%s/execution" % submission_id, "r")
-    # stderr = open("logs/apps/%s/stderr" % submission_id, "r")
-    # stdout = open("logs/apps/%s/stdout" % submission_id, "r")
-
-    # remove_newline = lambda x: x.replace("\n","")
-    # logs['execution'] = map(remove_newline, exec_log.readlines())
-    # logs['stderr'] = map(remove_newline, stderr.readlines())
-    # logs['stdout'] = map(remove_newline, stdout.readlines())
-
-    # exec_log.close()
-    # stderr.close()
-    # stdout.close()
-
-    # return logs
-
-def visualizer_url(submission_id):
-    pass
-    # """Gets the URL to access the visualizer interface
+def start_visualization(data, app_id):
     
-    # Arguments:
-    #     submission_id {string} -- Id of the job
+    if 'plugin' not in data or 'plugin_info' not in data or 'visualizer' not in data or 'datasource' not in data: 
+        API_LOG.log("Missing parameters in request")
+        raise ex.BadRequestException()
+
+    plugin = data['plugin']
+    plugin_info = data['plugin_info']
+    visualizer = data['visualizer']
+    datasource = data['datasource']
+   
+    if app_id not in visualized_apps:
+        executor = builder.get_visualizer(app_id, plugin, plugin_info, visualizer, datasource)
+        visualized_apps[app_id] = executor
+        executor.visualize_application()
+
+    else:
+        API_LOG.log("The application is already being visualized")
+        raise ex.BadRequestException()
+
+def visualizer_url(app_id):
+    """Gets the URL to access the visualizer interface
     
-    # Returns:
-    #     string -- The visualizer URL access
-    # """
+    Arguments:
+        app_id {string} -- Id of the job
+    
+    Returns:
+        dict -- Key being 'url' and value being the visualizer URL access
+    """
 
-    # if submission_id not in submissions.keys():
-    #     API_LOG.log("Wrong request")
-    #     raise ex.BadRequestException()
+    if app_id not in visualized_apps.keys():
+        API_LOG.log("Wrong request")
+        raise ex.BadRequestException()
 
-    # visualizer_url = submissions[submission_id].get_application_visualizer_url()
+    visualizer_url = visualized_apps[app_id].get_application_visualizer_url()
 
-    # return visualizer_url
+    return {"url": visualizer_url}
