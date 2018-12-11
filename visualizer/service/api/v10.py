@@ -13,11 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# from broker.plugins import base as plugin_base
 from visualizer.service import api
 from visualizer.utils.logger import Log
-# from broker.utils.framework import authorizer
-# from broker.utils.framework import optimizer
 from visualizer import exceptions as ex
 from visualizer.plugins.builder import VisualizerBuilder
 
@@ -28,24 +25,74 @@ visualized_apps = {}
 builder = VisualizerBuilder()
 
 def start_visualization(data, app_id):
+    """Starts the visualization of a job
     
-    if 'plugin' not in data or 'plugin_info' not in data or 'visualizer' not in data or 'datasource' not in data: 
+    Arguments:
+        app_id {string} -- Id of the job
+    
+    Returns:
+        None
+    """
+
+    if 'plugin' not in data or 'enable_visualizer' not in data or 'visualizer_plugin' not in data or 'datasource_type' not in data: 
         API_LOG.log("Missing parameters in request")
         raise ex.BadRequestException()
 
     plugin = data['plugin']
-    plugin_info = data['plugin_info']
-    visualizer = data['visualizer']
-    datasource = data['datasource']
-   
+    enable_visualizer = data['enable_visualizer']
+    visualizer_plugin = data['visualizer_plugin']
+    datasource_type = data['datasource_type']
+    
     if app_id not in visualized_apps:
-        executor = builder.get_visualizer(app_id, plugin, plugin_info, visualizer, datasource)
+        executor = builder.get_visualizer(app_id, plugin, enable_visualizer, visualizer_plugin, datasource_type)
         visualized_apps[app_id] = executor
         executor.visualize_application()
 
     else:
         API_LOG.log("The application is already being visualized")
         raise ex.BadRequestException()
+
+def stop_visualization(data, app_id):
+    """Stop the visualization of a job
+    
+    Arguments:
+        app_id {string} -- Id of the job
+    
+    Returns:
+        Plugin {Object} -- Returns a executor represeting the plugin executed
+    """
+
+    if ('enable_auth' in data.keys() and data['enable_auth']):
+        if 'username' not in data or 'password' not in data:
+            API_LOG.log("Missing parameters in request")
+            raise ex.BadRequestException()
+        
+        username = data['username']
+        password = data['password']
+
+        authorization = authorizer.get_authorization(api.authorization_url,
+                                                    username, password)
+
+        if not authorization['success']:
+            API_LOG.log("Unauthorized request")
+            raise ex.UnauthorizedException()
+
+    else:
+        if app_id not in visualized_apps.keys():
+            raise ex.BadRequestException()
+
+        if 'plugin' not in data or 'visualizer_plugin' not in data: 
+            API_LOG.log("Missing parameters in request")
+            raise ex.BadRequestException()
+
+        plugin = data['plugin']
+        visualizer_plugin = data['visualizer_plugin']
+
+        if plugin == 'kubejobs':
+            # Call the executor by app_id and stop the visualization.
+            visualized_apps[app_id].delete_visualizer_resources(app_id, visualizer_plugin)
+
+            return visualized_apps[app_id]
 
 def visualizer_url(app_id):
     """Gets the URL to access the visualizer interface
