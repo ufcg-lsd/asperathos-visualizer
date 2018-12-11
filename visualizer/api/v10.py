@@ -1,4 +1,4 @@
-# Copyright (c) 2017 LSD - UFCG.
+# Copyright (c) 2018 LSD - UFCG.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -36,3 +36,12 @@ def start_visualization(data, app_id):
 @rest.get('/visualizing/<app_id>')
 def get_visualizer_url(app_id):
     return u.render(api.visualizer_url(app_id))
+
+""" Stop the visualization of a running application.
+
+    Normal response codes: 202
+    Error response codes: 400
+"""
+@rest.post('/visualizing/<app_id>/stop')
+def stop_visualization(data, app_id):
+    return u.render(api.stop_visualization(data, app_id))

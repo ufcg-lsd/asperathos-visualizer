@@ -19,11 +19,11 @@ import time
 # Plugins must extend Thread to facilitate each parallel plugin execution
 class Plugin(threading.Thread):
 
-    def __init__(self, app_id, info_plugin, timeout=60):
+    def __init__(self, app_id, enable_visualizer, timeout=60):
         threading.Thread.__init__(self)
 
-        # Contains all the specific information for each plugin
-        self.info_plugin = info_plugin
+        # Flag that enable or disable the visualization
+        self.enable_visualizer = enable_visualizer
 
         # Flag that enable or disable the monitoring logic execution
         self.running = False

@@ -45,11 +45,11 @@ try:
         raise Exception("visualizer '%s' section missing" % visualizer)
 
     """ Grafana parameters """
-    if visualizer == 'grafana':
-        visualizer_user = config.get("grafana", "user")
-        visualizer_password = config.get("grafana", "password")
-        visualizer_type = config.get("grafana", "visualizer_type")
-        visualizer_ip = config.get("grafana", "visualizer_ip")  
+    if visualizer == 'k8s-grafana':
+        visualizer_user = config.get("k8s-grafana", "user")
+        visualizer_password = config.get("k8s-grafana", "password")
+        visualizer_type = config.get("k8s-grafana", "visualizer_type")
+        visualizer_ip = config.get("k8s-grafana", "visualizer_ip")  
 
     """ Validate if really exists a section to the datasource """
     if datasource != '' and datasource not in config.sections():

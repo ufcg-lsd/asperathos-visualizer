@@ -17,16 +17,34 @@ from visualizer import exceptions as ex
 from visualizer.service import api
 from visualizer.plugins.k8s_grafana.plugin import K8sGrafanaProgress
 
+""" Generates a visualizer builder of different types of visualizer.
+    This class selects the type of visualizer that will be launched
+    according with the user choice.
+"""
 class VisualizerBuilder:
+
     def __init__(self):
         pass
 
-    def get_visualizer(self, app_id, plugin, plugin_info, visualizer, datasource):
+    def get_visualizer(self, app_id, plugin, enable_visualizer, visualizer, datasource):
+        """ Gets the visualizer executor of the job
+        
+        Arguments:
+            app_id {string} -- Id of the job launched
+            plugin {string} -- Plugin of the environment where the visualizer will be launched
+            enable_visualizer {boolean} -- Flag that enables the visualization
+            visualizer {int} -- Visualizer type that will be launched
+            datasource {int} -- Datasource type of the visualizer launched
+        
+        Returns:
+            Plugin -- Returns an object that represents a executions of a plugin
+        """
+        
         executor = None
 
         if plugin == "kubejobs":
-            if visualizer == "grafana":
-                executor = K8sGrafanaProgress(app_id, plugin_info, datasource)
+            if visualizer == "k8s-grafana":
+                executor = K8sGrafanaProgress(app_id, enable_visualizer, datasource)
         else:
             raise ex.BadRequestException()
 
