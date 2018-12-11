@@ -30,25 +30,36 @@ MONITORING_INTERVAL = 2
 
 class K8sGrafanaProgress(Plugin):
 
-    def __init__(self, app_id, info_plugin, datasource, timeout=60):
-        Plugin.__init__(self, app_id, info_plugin, timeout)
+    def __init__(self, app_id, enable_visualizer, datasource, timeout=60):
+        Plugin.__init__(self, app_id, enable_visualizer, timeout)
 
         self.visualizer_url = "URL not generated!"
-
         self.datasource = datasource
-
-        self.enable_visualization = info_plugin['enable_visualization']
+        self.enable_visualization = enable_visualizer
 
     def visualize_application(self):
+        """ Starts the visualization of the job
+        
+        Arguments: 
+            None
+        
+        Returns:
+            None
+        """
         if self.enable_visualization:
             self.visualizer_url = self.create_visualizer_components(self.app_id)
 
     def create_visualizer_components(self, app_id):
+        """ Create all necessaries components (Pod and Service) to generates the visualizer of the job.
+        
+        Arguments:
+            app_id {string} -- Id of the job launched
 
-        visualizer_type = api.visualizer
-        visualizer_url = "URL not generated!"
+        Returns:
+            string -- The visualizer url of the job
+        """
 
-        if(visualizer_type == "grafana"):
+        if(self.datasource == 'monasca'):
             visualizer_ip, node_port = self.create_grafana_components(app_id, timeout=self.timeout)
             visualizer_url = "http://%s:%d" % (visualizer_ip, node_port)
             return visualizer_url
@@ -67,8 +78,6 @@ class K8sGrafanaProgress(Plugin):
         Returns:
             tuple -- A pair with the ip and port running the grafana service
         """
-
-        print("3")
 
         kube.config.load_kube_config(api.k8s_conf_path)
 
@@ -174,7 +183,7 @@ class K8sGrafanaProgress(Plugin):
             raise Exception("Could not provision %s!" % (visualizer_type))
 
     def create_grafana_datasource(self, user, password, visualizer_ip, node_port):
-        """Generates a datasource for grafana
+        """Generates a datasource for a grafana
         
         Arguments:
             user {string} -- Grafana's user with the necessary permissions
@@ -190,7 +199,20 @@ class K8sGrafanaProgress(Plugin):
             return self.create_monasca_datasource(user, password, visualizer_ip, node_port)
 
     def create_monasca_datasource(self, user, password, visualizer_ip, node_port):
-         # Compute necessary variables
+        """Generates a monasca datasource for a grafana
+        
+        Arguments:
+            user {string} -- Grafana's user with the necessary permissions
+            password {string} -- Password of the Grafana user
+            visualizer_ip {string} -- IP of one of the slaves that will be used to access the visualizer
+            node_port {string} -- Port where the visualizer will be running
+        
+        Returns:
+            boolean -- The status of the request. 'True' with the request was successful, 'False' otherwise
+        """
+
+
+        # Compute necessary variables
         name = api.datasource_name
         type_ds = api.datasource_type
         url_ds = api.datasource_url
@@ -289,4 +311,11 @@ class K8sGrafanaProgress(Plugin):
             name=name, namespace=namespace, body=delete)
 
     def get_application_visualizer_url(self):
+        """ Gets the url to the visualizer of the specific job
+        
+        Arguments: None
+        
+        Returns:
+            String -- The url of the visualizer
+        """
         return self.visualizer_url 
