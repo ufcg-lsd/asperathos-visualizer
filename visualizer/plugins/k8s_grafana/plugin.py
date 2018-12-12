@@ -30,12 +30,15 @@ MONITORING_INTERVAL = 2
 
 class K8sGrafanaProgress(Plugin):
 
-    def __init__(self, app_id, enable_visualizer, datasource, timeout=60):
+    def __init__(self, app_id, enable_visualizer, datasource, database_data, timeout=60):
         Plugin.__init__(self, app_id, enable_visualizer, timeout)
 
         self.visualizer_url = "URL not generated!"
         self.datasource = datasource
         self.enable_visualization = enable_visualizer
+        self.app_id = app_id
+        if datasource == 'influxdb':
+            self.database_data = database_data
 
     def visualize_application(self):
         """ Starts the visualization of the job
@@ -46,25 +49,19 @@ class K8sGrafanaProgress(Plugin):
         Returns:
             None
         """
-        if self.enable_visualization:
-            self.visualizer_url = self.create_visualizer_components(self.app_id)
 
-    def create_visualizer_components(self, app_id):
-        """ Create all necessaries components (Pod and Service) to generates the visualizer of the job.
-        
-        Arguments:
-            app_id {string} -- Id of the job launched
+        try:
 
-        Returns:
-            string -- The visualizer url of the job
-        """
+            if(self.datasource == 'monasca'):
+                self.create_grafana_components(self.app_id, 'monasca/grafana', timeout=self.timeout)
+            
+            elif(self.datasource == 'influxdb'):
+                self.create_grafana_components(self.app_id, 'grafana/grafana:5.4.1', timeout=self.timeout)
 
-        if(self.datasource == 'monasca'):
-            visualizer_ip, node_port = self.create_grafana_components(app_id, timeout=self.timeout)
-            visualizer_url = "http://%s:%d" % (visualizer_ip, node_port)
-            return visualizer_url
-
-    def create_grafana_components(self, app_id, img="monasca/grafana", namespace="default", visualizer_port=3000, timeout=60):
+        except Exception as e:
+            print(e)
+      
+    def create_grafana_components(self, app_id, img, namespace="default", visualizer_port=3000, timeout=60):
         """ Generates a individual visualizer dashboard for the Job.
         Create a Pod for the visualizer and expose it through a NodePort Service.
         
@@ -160,12 +157,13 @@ class K8sGrafanaProgress(Plugin):
             datasource_request = self.create_grafana_datasource(visualizer_user, visualizer_password, visualizer_ip, node_port)
             if(datasource_request):
                 print("Connected to %s on %s:%s!" % (visualizer_type, visualizer_ip, node_port))
-                print("Data source %s created on %s" % (api.datasource_name, visualizer_type))
+                print("Data source created on %s" % (visualizer_type))
                 while time.time() - start < timeout:
-                    dashboard_request = self.create_grafana_dashboard(app_id, visualizer_user, visualizer_password, visualizer_ip, node_port)
+                    dashboard_request = self.create_grafana_dashboard(app_id, visualizer_user, visualizer_password, img, visualizer_ip, node_port)
                     print("Trying to generate dashboard for %s on %s:%d..." % (visualizer_type, visualizer_ip, node_port))
                     if(dashboard_request):
                         print("Dashboard of the job created on: http://%s:%s" % (visualizer_ip, node_port))
+                        self.visualizer_url = "http://%s:%s" % (visualizer_ip, node_port)
                         visualizer_ready = True
                         break
                     else:
@@ -189,7 +187,7 @@ class K8sGrafanaProgress(Plugin):
             user {string} -- Grafana's user with the necessary permissions
             password {string} -- Password of the Grafana user
             visualizer_ip {string} -- IP of one of the slaves that will be used to access the visualizer
-            node_port {string} -- Port where the visualizer will be running
+            node_port {int} -- Port where the visualizer will be running
         
         Returns:
             boolean -- The status of the request. 'True' with the request was successful, 'False' otherwise
@@ -197,6 +195,49 @@ class K8sGrafanaProgress(Plugin):
 
         if self.datasource == 'monasca':
             return self.create_monasca_datasource(user, password, visualizer_ip, node_port)
+
+        elif self.datasource == 'influxdb':
+            return self.create_influx_datasource(user, password, visualizer_ip, node_port)
+
+    
+    def create_influx_datasource(self, user, password, visualizer_ip, node_port): 
+        """Generates a influxdb datasource for grafana
+        
+        Arguments:
+            user {string} -- Grafana's user with the necessary permissions
+            password {string} -- Password of the Grafana user
+            visualizer_ip {string} -- IP of one of the slaves that will be used to access the visualizer
+            node_port {int} -- Port where the visualizer will be running
+
+        Returns:
+            boolean -- The status of the request. 'True' with the request was successful, 'False' otherwise
+        """
+
+        # Compute necessary variables
+        name = api.influxdb_datasource_name
+        type_ds = api.influxdb_datasource_type
+        access = api.influxdb_datasource_access 
+
+        url = "http://%s:%s@%s:%d/api/datasources" % (user, password, visualizer_ip, node_port)
+
+        data_ds = {
+            "name":name,
+            "type":type_ds,
+            "url":"http://%s:%d" % (self.database_data['url'], self.database_data['port']),
+            "access":access,
+            "database": self.database_data['name']
+        }
+
+        data = json.dumps(data_ds)
+        headers = {'content-type': 'application/json'}
+
+        successful_request = True
+        try:
+            requests.post(url, data=data, headers=headers)
+        except requests.exceptions.ConnectionError:
+            successful_request = False
+
+        return successful_request
 
     def create_monasca_datasource(self, user, password, visualizer_ip, node_port):
         """Generates a monasca datasource for a grafana
@@ -211,15 +252,14 @@ class K8sGrafanaProgress(Plugin):
             boolean -- The status of the request. 'True' with the request was successful, 'False' otherwise
         """
 
-
         # Compute necessary variables
-        name = api.datasource_name
-        type_ds = api.datasource_type
-        url_ds = api.datasource_url
-        access = api.datasource_access 
-        basic_auth = api.datasource_basic_auth
-        auth_type = api.datasource_auth_type
-        token = api.datasource_token
+        name = api.monasca_datasource_name
+        type_ds = api.monasca_datasource_type
+        url_ds = api.monasca_datasource_url
+        access = api.monasca_datasource_access 
+        basic_auth = api.monasca_datasource_basic_auth
+        auth_type = api.monasca_datasource_auth_type
+        token = api.monasca_datasource_token
 
         url = "http://%s:%s@%s:%s/api/datasources" % (user, password, visualizer_ip, node_port)
 
@@ -247,7 +287,7 @@ class K8sGrafanaProgress(Plugin):
         return successful_request
 
 
-    def create_grafana_dashboard(self, app_id, user, password, visualizer_ip, node_port):
+    def create_grafana_dashboard(self, app_id, user, password, visualizer_img, visualizer_ip, node_port):
         """Generates a dashboard for grafana
         
         Arguments:
@@ -263,7 +303,10 @@ class K8sGrafanaProgress(Plugin):
 
         url = "http://%s:%s@%s:%s/api/dashboards/db" % (user, password, visualizer_ip, node_port)
 
-        f = open('./visualizer/utils/templates/dashboard-job.template')
+        if(visualizer_img == 'monasca/grafana'):
+            f = open('./visualizer/utils/templates/dashboard-job-monasca.template')
+        elif(visualizer_img == 'grafana/grafana:5.4.1'):
+            f = open('./visualizer/utils/templates/dashboard-job-influxdb.template')
 
         template = f.read().replace("app_id", app_id)
         dashboard_data = json.loads(template)
@@ -279,7 +322,7 @@ class K8sGrafanaProgress(Plugin):
 
         return successful_request
 
-    def delete_visualizer_resources(self, app_id, visualizer_type, namespace="default"):
+    def delete_visualizer_resources(self, app_id, visualizer_type, datasource_type, namespace="default"):
         """Delete visualizer resources (Pod and Service) of a specific job
         
         Arguments:
@@ -309,6 +352,18 @@ class K8sGrafanaProgress(Plugin):
         print("Deleting %s Service for job %s" % (visualizer_type, app_id))
         CoreV1Api.delete_namespaced_service(
             name=name, namespace=namespace, body=delete)
+
+        if(datasource_type == 'influxdb'):
+            influxdb_name = "%s-%s" % (datasource_type, app_id)
+            # Deleting Pod
+            print("Deleting %s Pod for job %s..." % (datasource_type, app_id))
+            CoreV1Api.delete_namespaced_pod(
+                name=influxdb_name, namespace=namespace, body=delete)
+
+            # Deleting service
+            print("Deleting %s Service for job %s" % (datasource_type, app_id))
+            CoreV1Api.delete_namespaced_service(
+            name=influxdb_name, namespace=namespace, body=delete)
 
     def get_application_visualizer_url(self):
         """ Gets the url to the visualizer of the specific job
