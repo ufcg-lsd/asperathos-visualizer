@@ -25,7 +25,7 @@ try:
     port = config.getint('general', 'port')
     plugins = config.get('general', 'plugins').split(',')
     visualizer = config.get('general', 'visualizer')
-    datasource = config.get('general', 'datasource')
+    datasources = config.get('general', 'datasources').split(',')
     use_debug = config.get('general', 'debug')
     retries = config.getint('general', 'retries')
 
@@ -51,20 +51,29 @@ try:
         visualizer_type = config.get("k8s-grafana", "visualizer_type")
         visualizer_ip = config.get("k8s-grafana", "visualizer_ip")  
 
-    """ Validate if really exists a section to the datasource """
-    if datasource != '' and datasource not in config.sections():
-        raise Exception("datasource '%s' section missing" % datasource)
-    
-    """ Monasca parameters """
-    if datasource == 'monasca':
-        datasource_name = config.get("monasca", "name")
-        datasource_type = config.get("monasca", "type")
-        datasource_url = config.get("monasca", "url")
-        datasource_access = config.get("monasca", "access")
-        datasource_basic_auth = config.getboolean("monasca", "basic_auth")
-        datasource_auth_type = config.get("monasca", "auth_type")
-        datasource_token = config.get("monasca", "token")  
+    for datasource in datasources: 
 
+        """ Validate if really exists a section to the datasource """
+        if datasource != '' and datasource not in config.sections():
+            raise Exception("datasource '%s' section missing" % datasource)
+
+        """ Monasca parameters """
+        if 'monasca' == datasource:
+            monasca_datasource_name = config.get("monasca", "name")
+            monasca_datasource_type = config.get("monasca", "type")
+            monasca_datasource_url = config.get("monasca", "url")
+            monasca_datasource_access = config.get("monasca", "access")
+            monasca_datasource_basic_auth = config.getboolean("monasca", "basic_auth")
+            monasca_datasource_auth_type = config.get("monasca", "auth_type")
+            monasca_datasource_token = config.get("monasca", "token")  
+        
+        """ InfluxDB parameters """
+        if 'influxdb' == datasource:
+            influxdb_datasource_name = config.get("influxdb", "name")
+            influxdb_datasource_type = config.get("influxdb", "type")
+            influxdb_datasource_url = config.get("influxdb", "url")
+            influxdb_datasource_access = config.get("influxdb", "access")
+            
 except Exception as e:
     print "Error: %s" % e.message
     quit()

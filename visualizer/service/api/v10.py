@@ -44,7 +44,12 @@ def start_visualization(data, app_id):
     datasource_type = data['datasource_type']
     
     if app_id not in visualized_apps:
-        executor = builder.get_visualizer(app_id, plugin, enable_visualizer, visualizer_plugin, datasource_type)
+        if 'database_data' in data:
+            database_data = data['database_data']
+            executor = builder.get_visualizer(app_id, plugin, enable_visualizer, visualizer_plugin, datasource_type, database_data)
+        else:
+            executor = builder.get_visualizer(app_id, plugin, enable_visualizer, visualizer_plugin, datasource_type)
+
         visualized_apps[app_id] = executor
         executor.visualize_application()
 
@@ -77,22 +82,22 @@ def stop_visualization(data, app_id):
             API_LOG.log("Unauthorized request")
             raise ex.UnauthorizedException()
 
-    else:
-        if app_id not in visualized_apps.keys():
-            raise ex.BadRequestException()
+    if app_id not in visualized_apps.keys():
+        raise ex.BadRequestException()
 
-        if 'plugin' not in data or 'visualizer_plugin' not in data: 
-            API_LOG.log("Missing parameters in request")
-            raise ex.BadRequestException()
+    if 'plugin' not in data or 'visualizer_plugin' not in data or 'datasource_type' not in data: 
+        API_LOG.log("Missing parameters in request")
+        raise ex.BadRequestException()
 
-        plugin = data['plugin']
-        visualizer_plugin = data['visualizer_plugin']
+    plugin = data['plugin']
+    visualizer_plugin = data['visualizer_plugin']
+    datasource_type = data['datasource_type']
 
-        if plugin == 'kubejobs':
-            # Call the executor by app_id and stop the visualization.
-            visualized_apps[app_id].delete_visualizer_resources(app_id, visualizer_plugin)
+    if plugin == 'kubejobs':
+        # Call the executor by app_id and stop the visualization.
+        visualized_apps[app_id].delete_visualizer_resources(app_id, visualizer_plugin, datasource_type)
 
-            return visualized_apps[app_id]
+        return visualized_apps[app_id]
 
 def visualizer_url(app_id):
     """Gets the URL to access the visualizer interface
