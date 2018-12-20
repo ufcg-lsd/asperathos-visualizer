@@ -24,10 +24,6 @@ import kubernetes as kube
 from visualizer.utils.datasources.datasource_base import Base
 from visualizer.service import api
 
-LOG_FILE = "progress.log"
-TIME_PROGRESS_FILE = "time_progress.log"
-MONITORING_INTERVAL = 2
-
 class MonascaDataSource(Base):
 
     def __init__(self, app_id):
