@@ -26,7 +26,8 @@ class VisualizerBuilder:
     def __init__(self):
         pass
 
-    def get_visualizer(self, app_id, plugin, enable_visualizer, visualizer, datasource, database_data={}):
+    def get_visualizer(self, app_id, plugin, enable_visualizer, 
+    visualizer, datasource, user, password, database_data={}):
         """ Gets the visualizer executor of the job
         
         Arguments:
@@ -41,10 +42,9 @@ class VisualizerBuilder:
         """
 
         executor = None
-
         if plugin == "kubejobs":
             if visualizer == "k8s-grafana":
-                executor = K8sGrafanaProgress(app_id, enable_visualizer, datasource, database_data)
+                executor = K8sGrafanaProgress(app_id, enable_visualizer, datasource, user, password, database_data)
         else:
             raise ex.BadRequestException()
 
