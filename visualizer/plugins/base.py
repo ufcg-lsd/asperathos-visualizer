@@ -40,12 +40,11 @@ class Plugin(threading.Thread):
         # The identifier for the submitted application
         self.app_id = app_id
 
-    def stop(self):
-        print "The %s is stopping for %s..." % (type(self).__name__,
-                                                self.app_id)
-        self.running = False
+    def start_visualization(self):
+        pass
 
-    # This method must be subscribed by each plugin that
-    # extends this base class
-    def visualize_application(self):
+    def stop_visualization(self):
+        pass
+
+    def get_visualizer_url(self):
         pass
