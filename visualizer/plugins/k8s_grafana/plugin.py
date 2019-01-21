@@ -23,6 +23,8 @@ import kubernetes as kube
 
 from visualizer.service import api
 from visualizer.plugins.base import Plugin
+from visualizer.utils.datasources.datasource_influx import InfluxDataSource
+from visualizer.utils.datasources.datasource_monasca import MonascaDataSource
 
 LOG_FILE = "progress.log"
 TIME_PROGRESS_FILE = "time_progress.log"
@@ -30,38 +32,250 @@ MONITORING_INTERVAL = 2
 
 class K8sGrafanaProgress(Plugin):
 
-    def __init__(self, app_id, enable_visualizer, datasource, database_data, timeout=60):
+    def __init__(self, app_id, monitor_plugin, enable_visualizer, datasource_type, user, password, database_data, timeout=60):
         Plugin.__init__(self, app_id, enable_visualizer, timeout)
-
+        # Compute necessary variables
+        kube.config.load_kube_config(api.k8s_conf_path)
         self.visualizer_url = "URL not generated!"
-        self.datasource = datasource
+        self.datasource = datasource_type
+        self.monitor_plugin = monitor_plugin
         self.enable_visualization = enable_visualizer
         self.app_id = app_id
-        if datasource == 'influxdb':
-            self.database_data = database_data
+        self.grafana_user = user
+        self.grafana_password = password
+        if datasource_type == 'influxdb':
+            self.datasource = InfluxDataSource(monitor_plugin, database_data, app_id)
+        elif datasource_type == 'monasca':
+            self.datasource = MonascaDataSource(app_id)
+        else:
+            raise Exception("ERROR: Datasource type unknown...!")
 
-    def visualize_application(self):
+        self.visualizer_type = api.visualizer_type
+        self.visualizer_ip = api.visualizer_ip # FIXME(rafael): get node ip from k8s api instead of config
+
+    def start_visualization(self):
         """ Starts the visualization of the job
         
-        Arguments: 
+        Arguments:
             None
         
         Returns:
             None
         """
-
-        try:
-
-            if(self.datasource == 'monasca'):
-                self.create_grafana_components(self.app_id, 'monasca/grafana', timeout=self.timeout)
-            
-            elif(self.datasource == 'influxdb'):
-                self.create_grafana_components(self.app_id, 'grafana/grafana:5.4.1', timeout=self.timeout)
+        try:    
+            self._create_grafana_components(self.app_id, 
+            self.grafana_user, self.grafana_password, timeout=self.timeout)
 
         except Exception as e:
             print(e)
+
+    def stop_visualization(self):
+        """ Stop visualizer service and delete all resources
+        
+        Arguments: 
+            None
+        Returns: 
+            None
+        """
+        print "The %s is stopping for %s..." % (type(self).__name__,
+                                                self.app_id)
+        self.running = False
+        self._delete_visualizer_resources()
+    
+    def get_visualizer_url(self):
+        """ Gets the url to the visualizer of the specific job
+        
+        Arguments: 
+            None
+        Returns:
+          String -- The url of the visualizer
+        """
+        return self.visualizer_url
+    
+    def _delete_visualizer_resources(self, visualizer_type='grafana'):
+        """Delete visualizer resources (Pod and Service) of a specific job
+        
+        Arguments:
+            None or visualizer_type {string} -- Type of visualizer service
+        Returns:
+            None
+        """
+        self.datasource.delete_visualizer_resources(visualizer_type)
       
-    def create_grafana_components(self, app_id, img, namespace="default", visualizer_port=3000, timeout=60):
+    def _get_grafana_pod_spec(self, grafana_port=3000):
+        """ Create the Pod spec for grafana
+        
+        Arguments:
+            grafana_port {int} -- Port that the grafana will serve
+        
+        Returns:
+            Dict -- Dict with specs of grafana pod
+        """
+        grafana_pod_spec = {
+            "apiVersion": "v1",
+            "kind": "Pod",
+            "metadata": {
+                "name": "grafana-%s" % self.app_id,
+                "labels": {
+                    "app": "grafana-%s" % self.app_id
+                }
+            },
+            "spec": {
+                "containers": [{
+                    "name": "grafana-master",
+                    "image": self.datasource.image,
+                    "env": [{
+                        "name": "MASTER",
+                        "value": str(True)
+                    }],
+                    "ports": [{
+                        "containerPort": grafana_port
+                    }]
+                }]
+            }
+        }
+
+        return grafana_pod_spec
+
+    def _get_grafana_service_spec(self, port=3000):
+        """ Create the Service spec for grafana
+        
+        Arguments:
+            grafana_port {int} -- Port that the grafana will serve
+        
+        Returns:
+            Dict -- Dict with specs of grafana service
+        """
+        # Create the Service object for grafana
+        visualizer_svc_spec = {
+            "apiVersion": "v1",
+            "kind": "Service",
+            "metadata": {
+                "name":"grafana-%s" % self.app_id,
+                "labels": {
+                    "app": "grafana-%s" % self.app_id
+                }
+            },
+            "spec": {
+                "ports": [{
+                    "protocol": "TCP",
+                    "port": port,
+                    "targetPort": port
+                }],
+                "selector": {
+                    "app": "grafana-%s" % self.app_id
+                },
+                "type": "NodePort"
+            }
+        }
+
+        return visualizer_svc_spec
+
+    def _create_grafana_pod(self, namespace='default'):
+        """ Create the Pod for grafana
+        
+        Arguments:
+            namespace {string} -- Namespace that the grafana pod will be created
+        
+        Returns:
+            None
+        """
+        grafana_pod_spec = self._get_grafana_pod_spec()
+        CoreV1Api = kube.client.CoreV1Api()
+        try:
+            print("Creating Grafana Pod...")
+            CoreV1Api.create_namespaced_pod(
+                namespace=namespace, body=grafana_pod_spec)
+            print("Grafana Pod Created...!")
+        except kube.client.rest.ApiException as e:
+            print(e)
+
+    def _create_grafana_service(self, namespace='default'):
+        """ Create the Service for grafana
+        
+        Arguments:
+            namespace {string} -- Namespace that the grafana service will be created
+        
+        Returns:
+            None
+        """
+        grafana_svc_spec = self._get_grafana_service_spec()
+        CoreV1Api = kube.client.CoreV1Api()
+        node_port = None
+        try:
+            print("Creating Grafana Service...")
+            s = CoreV1Api.create_namespaced_service(
+                namespace=namespace, body=grafana_svc_spec)
+            node_port = s.spec.ports[0].node_port
+        except kube.client.rest.ApiException as e:
+            print(e)
+        return node_port
+
+
+    def _create_datasource(self, grafana_user, grafana_password,
+                                    visualizer_ip, node_port, timeout):
+        """ Create the Datasource in grafana
+        
+        Arguments:
+            grafana_user {string} -- Grafana's user with the necessary permissions
+            grafana_password {string} -- Password of the Grafana user
+            visualizer_ip {string} -- IP of one of the slaves that will be used to access the visualizer
+            node_port {string} -- Port where the visualizer will be running
+            timeout {int} -- Max time that will try create datasource
+        
+        Returns:
+            Boolean -- State of creation of datasource
+        """
+        start = time.time()
+        ready = False
+        print("Trying Grafana on %s:%s..." % (visualizer_ip, node_port))
+        while time.time() - start < timeout:
+            time.sleep(5)
+            datasource_result = self.datasource.create_grafana_datasource(
+                            grafana_user, grafana_password, visualizer_ip, node_port)
+            if(datasource_result):
+                print("Connected to Grafana on %s:%s!" % (visualizer_ip, node_port))
+                print("Data source created on Grafana")
+                ready = True
+                break
+            else:
+                print("Grafana is not ready yet!")
+        return ready
+
+
+    def _create_dashboard(self, grafana_user, grafana_password,
+                                    visualizer_ip, node_port, timeout):
+        """ Create the Datasource in grafana
+        
+        Arguments:
+            grafana_user {string} -- Grafana's user with the necessary permissions
+            grafana_password {string} -- Password of the Grafana user
+            visualizer_ip {string} -- IP of one of the slaves that will be used to access the visualizer
+            node_port {string} -- Port where the visualizer will be running
+            timeout {int} -- Max time that will try create dashboard
+            
+        Returns:
+            Boolean -- State of creation of dashboard
+        """
+        start = time.time()
+        ready = False
+        print("Trying to generate dashboard for Grafana on %s:%d..." % (visualizer_ip, node_port))
+        while time.time() - start < timeout:
+            time.sleep(5)
+            dashboard_result = self.datasource.create_grafana_dashboard(
+                        grafana_user, grafana_password, visualizer_ip, node_port)
+            if(dashboard_result):
+                print("Dashboard of the job created on: http://%s:%s" % (visualizer_ip, node_port))
+                self.visualizer_url = "http://%s:%s" % (visualizer_ip, node_port)
+                ready = True
+                break
+            else:
+                print("Grafana is not ready yet!")
+        return ready
+
+
+    def _create_grafana_components(self, app_id, grafana_user, grafana_password, 
+                                    namespace="default", visualizer_port=3000, timeout=60):
         """ Generates a individual visualizer dashboard for the Job.
         Create a Pod for the visualizer and expose it through a NodePort Service.
         
@@ -76,301 +290,30 @@ class K8sGrafanaProgress(Plugin):
             tuple -- A pair with the ip and port running the grafana service
         """
 
-        kube.config.load_kube_config(api.k8s_conf_path)
+        self._create_grafana_pod()
+        node_port = self._create_grafana_service()
 
-        # Compute necessary variables
-        visualizer_user = api.visualizer_user
-        visualizer_password = api.visualizer_password
-        visualizer_type = api.visualizer_type
-        visualizer_ip = api.visualizer_ip # FIXME(rafael): get node ip from k8s api instead of config
-
-        # Create the Pod object for redis
-        grafana_pod_spec = {
-            "apiVersion": "v1",
-            "kind": "Pod",
-            "metadata": {
-                "name": "%s-%s" % (visualizer_type, app_id),
-                "labels": {
-                    "app": "%s-%s" % (visualizer_type, app_id)
-                }
-            },
-            "spec": {
-                "containers": [{
-                    "name": "%s-master" % (visualizer_type),
-                    "image": img,
-                    "env": [{
-                        "name": "MASTER",
-                        "value": str(True)
-                    }],
-                    "ports": [{
-                        "containerPort": visualizer_port
-                    }]
-                }]
-            }
-        }
-
-        # Create the Service object for grafana
-        visualizer_svc_spec = {
-            "apiVersion": "v1",
-            "kind": "Service",
-            "metadata": {
-                "name":"%s-%s" % (visualizer_type, app_id),
-                "labels": {
-                    "app": "%s-%s" % (visualizer_type, app_id)
-                }
-            },
-            "spec": {
-                "ports": [{
-                    "protocol": "TCP",
-                    "port": 3000,
-                    "targetPort": 3000
-                }],
-                "selector": {
-                    "app": "%s-%s" % (visualizer_type, app_id)
-                },
-                "type": "NodePort"
-            }
-        }
-
-        # Create Service
-        CoreV1Api = kube.client.CoreV1Api()
-        node_port = None
-        try:
-            print("Creating %s Pod..." % (visualizer_type))
-            CoreV1Api.create_namespaced_pod(
-                namespace=namespace, body=grafana_pod_spec)
-            print("Creating %s Service..." % (visualizer_type))
-            s = CoreV1Api.create_namespaced_service(
-                namespace=namespace, body=visualizer_svc_spec)
-            node_port = s.spec.ports[0].node_port
-        except kube.client.rest.ApiException as e:
-            print(e)
-
-        print("Created %s on address: %s:%d" % (visualizer_type, visualizer_ip, node_port))
+        # img = self.datasource.imagem
+        visualizer_ip = self.visualizer_ip
+        print("Created Grafana on address: %s:%d" % (visualizer_ip, node_port))
 
         # Check when the visualizer is ready to create the datasource and dashboard
-        visualizer_ready = False
-        start = time.time()
-        while time.time() - start < timeout:
-            time.sleep(5)
-            print("Trying %s on %s:%s..." % (visualizer_type, visualizer_ip, node_port))
-            datasource_request = self.create_grafana_datasource(visualizer_user, visualizer_password, visualizer_ip, node_port)
-            if(datasource_request):
-                print("Connected to %s on %s:%s!" % (visualizer_type, visualizer_ip, node_port))
-                print("Data source created on %s" % (visualizer_type))
-                while time.time() - start < timeout:
-                    dashboard_request = self.create_grafana_dashboard(app_id, visualizer_user, visualizer_password, img, visualizer_ip, node_port)
-                    print("Trying to generate dashboard for %s on %s:%d..." % (visualizer_type, visualizer_ip, node_port))
-                    if(dashboard_request):
-                        print("Dashboard of the job created on: http://%s:%s" % (visualizer_ip, node_port))
-                        self.visualizer_url = "http://%s:%s" % (visualizer_ip, node_port)
-                        visualizer_ready = True
-                        break
-                    else:
-                        print("%s is not ready yet!" % (visualizer_type))
-                break
-            else: 
-                print("%s is not ready yet!" % (visualizer_type))
 
-        if visualizer_ready:
-            return visualizer_ip, node_port
-        else:
-            print("Timed out waiting for %s to be available." % (visualizer_type))
-            print("%s address: %s:%d" % (visualizer_type, visualizer_ip, node_port))
-            delete_visualizer_resources(app_id, visualizer_type)
-            raise Exception("Could not provision %s!" % (visualizer_type))
+        try:
+            datasource_created = self._create_datasource(grafana_user, grafana_password,
+                                    visualizer_ip, node_port, timeout)
 
-    def create_grafana_datasource(self, user, password, visualizer_ip, node_port):
-        """Generates a datasource for a grafana
-        
-        Arguments:
-            user {string} -- Grafana's user with the necessary permissions
-            password {string} -- Password of the Grafana user
-            visualizer_ip {string} -- IP of one of the slaves that will be used to access the visualizer
-            node_port {int} -- Port where the visualizer will be running
-        
-        Returns:
-            boolean -- The status of the request. 'True' with the request was successful, 'False' otherwise
-        """
+            dashboard_created = self._create_dashboard(grafana_user, grafana_password,
+                                    visualizer_ip, node_port, timeout)
 
-        if self.datasource == 'monasca':
-            return self.create_monasca_datasource(user, password, visualizer_ip, node_port)
+            if datasource_created and dashboard_created:
+                return visualizer_ip, node_port
+            
+            else: raise Exception("Could not provision Grafana!")
 
-        elif self.datasource == 'influxdb':
-            return self.create_influx_datasource(user, password, visualizer_ip, node_port)
+        except Exception as ex:
+            print("Timed out waiting for Grafana to be available.")
+            print("Grafana address: %s:%d" % (visualizer_ip, node_port))
+            self.datasource.delete_visualizer_resources(app_id)
 
     
-    def create_influx_datasource(self, user, password, visualizer_ip, node_port): 
-        """Generates a influxdb datasource for grafana
-        
-        Arguments:
-            user {string} -- Grafana's user with the necessary permissions
-            password {string} -- Password of the Grafana user
-            visualizer_ip {string} -- IP of one of the slaves that will be used to access the visualizer
-            node_port {int} -- Port where the visualizer will be running
-
-        Returns:
-            boolean -- The status of the request. 'True' with the request was successful, 'False' otherwise
-        """
-
-        # Compute necessary variables
-        name = api.influxdb_datasource_name
-        type_ds = api.influxdb_datasource_type
-        access = api.influxdb_datasource_access 
-
-        url = "http://%s:%s@%s:%d/api/datasources" % (user, password, visualizer_ip, node_port)
-
-        data_ds = {
-            "name":name,
-            "type":type_ds,
-            "url":"http://%s:%d" % (self.database_data['url'], self.database_data['port']),
-            "access":access,
-            "database": self.database_data['name']
-        }
-
-        data = json.dumps(data_ds)
-        headers = {'content-type': 'application/json'}
-
-        successful_request = True
-        try:
-            requests.post(url, data=data, headers=headers)
-        except requests.exceptions.ConnectionError:
-            successful_request = False
-
-        return successful_request
-
-    def create_monasca_datasource(self, user, password, visualizer_ip, node_port):
-        """Generates a monasca datasource for a grafana
-        
-        Arguments:
-            user {string} -- Grafana's user with the necessary permissions
-            password {string} -- Password of the Grafana user
-            visualizer_ip {string} -- IP of one of the slaves that will be used to access the visualizer
-            node_port {string} -- Port where the visualizer will be running
-        
-        Returns:
-            boolean -- The status of the request. 'True' with the request was successful, 'False' otherwise
-        """
-
-        # Compute necessary variables
-        name = api.monasca_datasource_name
-        type_ds = api.monasca_datasource_type
-        url_ds = api.monasca_datasource_url
-        access = api.monasca_datasource_access 
-        basic_auth = api.monasca_datasource_basic_auth
-        auth_type = api.monasca_datasource_auth_type
-        token = api.monasca_datasource_token
-
-        url = "http://%s:%s@%s:%s/api/datasources" % (user, password, visualizer_ip, node_port)
-
-        data_ds = {
-            "name":name,
-            "type":type_ds,
-            "url":url_ds,
-            "access":access,
-            "basicAuth":basic_auth,
-            "jsonData": {
-                "authType":auth_type,
-                "token":token
-            }
-        }
-
-        data = json.dumps(data_ds)
-        headers = {'content-type': 'application/json'}
-
-        successful_request = True
-        try:
-            requests.post(url, data=data, headers=headers)
-        except requests.exceptions.ConnectionError:
-            successful_request = False
-
-        return successful_request
-
-
-    def create_grafana_dashboard(self, app_id, user, password, visualizer_img, visualizer_ip, node_port):
-        """Generates a dashboard for grafana
-        
-        Arguments:
-            app_id {string} -- Id of the job launched
-            user {string} -- Grafana's user with the necessary permissions
-            password {string} -- Password of the Grafana user
-            visualizer_ip {string} -- IP of one of the slaves that will be used to access the visualizer
-            node_port {string} -- Port where the visualizer will be running
-        
-        Returns:
-            boolean -- The status of the request. 'True' with the request was successful, 'False' otherwise
-        """
-
-        url = "http://%s:%s@%s:%s/api/dashboards/db" % (user, password, visualizer_ip, node_port)
-
-        if(visualizer_img == 'monasca/grafana'):
-            f = open('./visualizer/utils/templates/dashboard-job-monasca.template')
-        elif(visualizer_img == 'grafana/grafana:5.4.1'):
-            f = open('./visualizer/utils/templates/dashboard-job-influxdb.template')
-
-        template = f.read().replace("app_id", app_id)
-        dashboard_data = json.loads(template)
-        data = json.dumps(dashboard_data)
-
-        headers = {'content-type': 'application/json'}
-
-        successful_request = True
-        try:
-            requests.post(url, data=data, headers=headers)
-        except requests.exceptions.ConnectionError:
-            successful_request = False
-
-        return successful_request
-
-    def delete_visualizer_resources(self, app_id, visualizer_type, datasource_type, namespace="default"):
-        """Delete visualizer resources (Pod and Service) of a specific job
-        
-        Arguments:
-            app_id {string} -- Id of the job launched
-            visualizer_type {string} -- Type of the visualizer
-            namespace {string} -- Namespace of the resources
-        
-        Returns:
-            None
-        """
-
-        # load kubernetes config
-        kube.config.load_kube_config(api.k8s_conf_path)
-
-        CoreV1Api = kube.client.CoreV1Api()
-        # Create generic ``V1DeleteOptions``
-        delete = kube.client.V1DeleteOptions()
-
-        name = "%s-%s" % (visualizer_type, app_id)
-
-        # Deleting Pod
-        print("Deleting %s Pod for job %s..." % (visualizer_type, app_id))
-        CoreV1Api.delete_namespaced_pod(
-            name=name, namespace=namespace, body=delete)
-
-        # Deleting service
-        print("Deleting %s Service for job %s" % (visualizer_type, app_id))
-        CoreV1Api.delete_namespaced_service(
-            name=name, namespace=namespace, body=delete)
-
-        if(datasource_type == 'influxdb'):
-            influxdb_name = "%s-%s" % (datasource_type, app_id)
-            # Deleting Pod
-            print("Deleting %s Pod for job %s..." % (datasource_type, app_id))
-            CoreV1Api.delete_namespaced_pod(
-                name=influxdb_name, namespace=namespace, body=delete)
-
-            # Deleting service
-            print("Deleting %s Service for job %s" % (datasource_type, app_id))
-            CoreV1Api.delete_namespaced_service(
-            name=influxdb_name, namespace=namespace, body=delete)
-
-    def get_application_visualizer_url(self):
-        """ Gets the url to the visualizer of the specific job
-        
-        Arguments: None
-        
-        Returns:
-            String -- The url of the visualizer
-        """
-        return self.visualizer_url 
