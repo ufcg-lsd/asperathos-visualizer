@@ -32,18 +32,19 @@ MONITORING_INTERVAL = 2
 
 class K8sGrafanaProgress(Plugin):
 
-    def __init__(self, app_id, enable_visualizer, datasource_type, user, password, database_data, timeout=60):
+    def __init__(self, app_id, monitor_plugin, enable_visualizer, datasource_type, user, password, database_data, timeout=60):
         Plugin.__init__(self, app_id, enable_visualizer, timeout)
         # Compute necessary variables
         kube.config.load_kube_config(api.k8s_conf_path)
         self.visualizer_url = "URL not generated!"
         self.datasource = datasource_type
+        self.monitor_plugin = monitor_plugin
         self.enable_visualization = enable_visualizer
         self.app_id = app_id
         self.grafana_user = user
         self.grafana_password = password
         if datasource_type == 'influxdb':
-            self.datasource = InfluxDataSource(database_data, app_id)
+            self.datasource = InfluxDataSource(monitor_plugin, database_data, app_id)
         elif datasource_type == 'monasca':
             self.datasource = MonascaDataSource(app_id)
         else:

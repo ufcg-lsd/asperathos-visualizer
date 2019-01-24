@@ -26,14 +26,17 @@ from visualizer.service import api
 
 class InfluxDataSource(Base):
 
-    def __init__(self, database_data, app_id):
+    def __init__(self, monitor_plugin, database_data, app_id):
         Base.__init__(self, app_id, api.influxdb_datasource_name, api.influxdb_datasource_type)
         # Compute necessary variables
         self.datasource_access = api.influxdb_datasource_access
         self.datasource_url = database_data['url']
         self.datasource_port = database_data['port']
         self.database_name = database_data['name']
-        self.dashboard_path = './visualizer/utils/templates/dashboard-job-influxdb.template'
+        if(monitor_plugin == 'kubejobs'):
+            self.dashboard_path = './visualizer/utils/templates/dashboard-job-influxdb-kubejobs.template'
+        elif(monitor_plugin == 'vertical'):
+            self.dashboard_path = './visualizer/utils/templates/dashboard-job-influxdb-vertical.template'
         self.image = 'grafana/grafana:5.4.2'
 
     def create_grafana_datasource(self, user, password, visualizer_ip, node_port):

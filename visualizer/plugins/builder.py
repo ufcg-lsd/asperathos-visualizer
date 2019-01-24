@@ -42,9 +42,9 @@ class VisualizerBuilder:
         """
 
         executor = None
-        if plugin == "kubejobs":
+        if plugin == "kubejobs" or plugin == "vertical":
             if visualizer == "k8s-grafana":
-                executor = K8sGrafanaProgress(app_id, enable_visualizer, datasource, user, password, database_data)
+                executor = K8sGrafanaProgress(app_id, plugin, enable_visualizer, datasource, user, password, database_data)
         else:
             raise ex.BadRequestException()
 
