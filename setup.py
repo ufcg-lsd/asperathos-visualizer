@@ -12,8 +12,8 @@ setup(
 
     url='',
 
-    author='Rafael Falcao',
-    author_email='rafaelfrequent@gmail.com',
+    author='Rafael Falcao, Javan Lacerda',
+    author_email='rafaelfrequent@gmail.com, ',
 
     license='Apache 2.0',
 

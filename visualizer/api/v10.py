@@ -26,7 +26,6 @@ rest = u.Rest('v10', __name__)
 """
 @rest.post('/visualizing/<app_id>')
 def start_visualization(data, app_id):
-    print data
     return u.render(api.start_visualization(data, app_id))
 
 """ Returns the url of the visualizer of the job.
