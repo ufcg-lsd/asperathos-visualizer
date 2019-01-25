@@ -35,7 +35,7 @@ class InfluxDataSource(Base):
         self.database_name = database_data['name']
         if(monitor_plugin == 'kubejobs'):
             self.dashboard_path = './visualizer/utils/templates/dashboard-job-influxdb-kubejobs.template'
-        elif(monitor_plugin == 'vertical'):
+        elif(monitor_plugin == 'external_api'):
             self.dashboard_path = './visualizer/utils/templates/dashboard-job-influxdb-vertical.template'
         self.image = 'grafana/grafana:5.4.2'
 

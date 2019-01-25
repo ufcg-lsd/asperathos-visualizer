@@ -42,7 +42,7 @@ class VisualizerBuilder:
         """
 
         executor = None
-        if plugin == "kubejobs" or plugin == "vertical":
+        if plugin == "kubejobs" or plugin == "external_api":
             if visualizer == "k8s-grafana":
                 executor = K8sGrafanaProgress(app_id, plugin, enable_visualizer, datasource, user, password, database_data)
         else:
