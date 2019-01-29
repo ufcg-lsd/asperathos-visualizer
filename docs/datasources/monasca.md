@@ -1,12 +1,12 @@
-# K8s-Grafana Plugin
+# Monasca Datasource
 
 ## How does it works?
 
-Creates a Pod in a Kubernetes cluster that will give support to a [Grafana](https://grafana.com/) platform that will provide to the user a Visualization dashboard where can be checked the job progress.
+Uses [Monasca](http://monasca.io/) as Asperathos Datasource to collect metrics about a running application.
 
 ## Configuration
 
-In order to correctly configure the Visualizer to execute the K8s-Grafana plugin, modifications in the *visualizer.cfg* file are necessary. Following you can check an example of a configuration file that can be used to execute the K8s-Grafana plugin.
+In order to correctly configure the Visualizer to execute the K8s-Grafana plugin using Monasca as datasource, modifications in the *visualizer.cfg* file are necessary. Following you can check an example of a configuration file that can be used to execute the K8s-Grafana plugin with Monasca as datasource.
 
 ### Configuration file example:
 
@@ -15,19 +15,23 @@ In order to correctly configure the Visualizer to execute the K8s-Grafana plugin
 host = 0.0.0.0
 port = 6002
 plugins = k8s-grafana
-datasources = datasource
+datasources = monasca
 debug = true
 retries = 5
 
 [k8s-grafana]
-# Path of the conf file of the Kubernetes cluster
 k8s_conf_path = /home/user/.kube/config
 visualizer_type = k8s-grafana
+visualizer_ip = 10.11.5.62
 
-[datasource]
-var1 =
-var2 = 
-var3 = 
+[monasca]
+name = monasca
+type = monasca-datasource
+url = https://10.11.15.254:8070
+access = proxy
+basic_auth = no
+auth_type = token
+token  = gAAAAABcEAtUO1uy24lKhTGt04pg4tYYrBQbR-w6wyzfkejenPhkL73YdtBopQmTeRcd1o3zWPeRJ4dFD9IcOcfVWrgaaF7Kxntk2muE_YpBvu3LBL0JPGYdAaeW-xsKBSesbU1DrZO7N5jmyMfq92BEY_Dtq9D1tLo4sE1gqICGmWY819ThZJs
 ```
 
 ## Execute plugin
@@ -60,7 +64,7 @@ In order to execute the plugin, a JSON needs to be correctly configurate with al
       "enable_visualizer":true,
       "visualizer_plugin":"k8s-grafana",
       "visualizer_info":{  
-         "datasource_type":"datasource"
+         "datasource_type":"monasca"
       },
       "env_vars":{  
          [...]

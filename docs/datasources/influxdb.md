@@ -1,12 +1,12 @@
-# K8s-Grafana Plugin
+# InfluxDB Datasource
 
 ## How does it works?
 
-Creates a Pod in a Kubernetes cluster that will give support to a [Grafana](https://grafana.com/) platform that will provide to the user a Visualization dashboard where can be checked the job progress.
+Creates a pod that will support a InfluDB database that will be used to collect all necessary metrics of the application.
 
 ## Configuration
 
-In order to correctly configure the Visualizer to execute the K8s-Grafana plugin, modifications in the *visualizer.cfg* file are necessary. Following you can check an example of a configuration file that can be used to execute the K8s-Grafana plugin.
+In order to correctly configure the Visualizer to execute the K8s-Grafana plugin using InfluxDB as datasource, modifications in the *visualizer.cfg* file are necessary. Following you can check an example of a configuration file that can be used to execute the K8s-Grafana with InfluxDB as datasource.
 
 ### Configuration file example:
 
@@ -15,19 +15,24 @@ In order to correctly configure the Visualizer to execute the K8s-Grafana plugin
 host = 0.0.0.0
 port = 6002
 plugins = k8s-grafana
-datasources = datasource
+datasources = influxdb
 debug = true
 retries = 5
 
 [k8s-grafana]
-# Path of the conf file of the Kubernetes cluster
 k8s_conf_path = /home/user/.kube/config
 visualizer_type = k8s-grafana
+visualizer_ip = 10.11.5.62
 
-[datasource]
-var1 =
-var2 = 
-var3 = 
+[influxdb]
+# Name of the datasource
+name = InfluxDB
+# Type of the datasource
+type = influxdb
+# URL of one of the nodes contained in the cluster
+url = https://10.11.5.62
+# The way of access
+access = proxy
 ```
 
 ## Execute plugin
@@ -60,7 +65,7 @@ In order to execute the plugin, a JSON needs to be correctly configurate with al
       "enable_visualizer":true,
       "visualizer_plugin":"k8s-grafana",
       "visualizer_info":{  
-         "datasource_type":"datasource"
+         "datasource_type":"influxdb"
       },
       "env_vars":{  
          [...]

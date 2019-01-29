@@ -2,66 +2,77 @@
 This is an important step to enjoy all flexibility and features that this framework provides.
 
 ## Steps
-1. Create a new folder under *broker/plugins* with the desired plugin name and add *__init__.py*. In this tutorial, we will use MyNewPlugin as the plugin name
- 
-2. Write a new python class under *broker/plugins/mynewplugin*
- 
-It must implement the methods *get_title*, *get_description*, *to_dict* and *execute*.
- 
-- **get_title(self)**
-  - Returns plugin title
- 
-- **get_description(self)**
-  - Returns plugin description
- 
-- **to_dict(self)**
-  - Return a dict with the plugin information, name, title and description
- 
-- **execute(self, data)**
-  - Actually execute the logic of cluster creation and job execution
-  - Returns information if the execution was successful or not
-    
+
+1. In *visualizer.cfg* add the plugin to the list of desired plugins:
+
 ### Example:
 
 ```
-from broker.plugins import base
-
-class MyNewPluginProvider(base.PluginInterface):
-
-    def get_title(self):
-        return 'My New Plugin'
-
-    def get_description(self):
-        return 'My New Plugin'
-
-    def to_dict(self):
-        return {
-            'name': self.name,
-            'title': self.get_title(),
-            'description': self.get_description(),
-        }
-
-    def execute(self, data):
-        return True
-```
- 
-3. Add the new plugin to *setup.py* under entry_points:
-
-```
-    entry_points={
-        'console_scripts': [
-            'broker=broker.cli.main:main',
-        ],
-        'broker.execution.plugins': [
-            'my_new_plugin=broker.plugins.my_new_plugin.plugin:MyNewPluginProvider',
-        ],
-```
- 
-4. Under *broker.cfg* add the plugin to the list of desired plugins:
-
-```
 [general]
-plugins = plugin1,plugin2,my_new_plugin
+host = 0.0.0.0
+port = 6001
+plugins = my_new_visualizer
+debug = True
+retries = 5
+
+[my_new_visualizer]
+var1 = 
+var2 = 
+var3 = 
 ```
+In this tutorial, we will use MyNewVisualizer to represent a new visualizer plugin.
+
+2. Create a new if statement condition in the file *visualizer/service/api/__init__.py* that will recognize if the new plugin added is informed in the configuration file (*visualizer.cfg*). If this condition is true, then the necessary variables to execute the plugin needs to be informed in the *visualizer.cfg* file and computed in the *visualizer/service/api/__init__.py*.
+
+### Example:
+
+```
+import ConfigParser
+
+try:
+
+[...]
+    
+    if 'my_new_visualizer' in plugins:
+        var1 = config.get('my_new_visualizer', 'var1')
+        var2 = config.get('my_new_visualizer', 'var2')
+        var3 = config.get('my_new_visualizer', 'var3')
+
+[...]
+```
+
+3. Create a new folder under *visualizer/plugins* with the desired plugin name and add *__init__.py*.
  
-Note: Make sure that the name matches under *setup.py* and the *broker.cfg* otherwise the plugin won’t be loaded.
+4. Write a new python class under *visualizer/plugins/mynewvisualizer*. This class must extend *visualizer.plugins.base* and implement only four methods: __init__, start_visualization, stop_visualization, get_visualizer_url.
+		   
+* **Example**:
+
+	* ```
+		class MyNewVisualizer:
+
+    		def __init__(self, app_id, plugin_info, collect_period, retries=100):
+        	# set things up
+			   pass
+        
+    		def start_visualization(self):
+        	# visualizing logic
+        	   pass
+
+              def stop_visualization(self):
+              # stop the visualizing logic
+                 pass
+
+              def get_visualizer_url(self):
+              # returns the visualizer url
+                 pass
+
+	  ```
+
+5. Edit the VisualizerBuilder class adding a new condition to check the plugin name in the start_visualization. Instantiate the plugin in the conditional case.
+* **Example**:
+	* ```
+		...
+		elif plugin_name == "mynewvisualizer":
+	            plugin = MyNewVisualizer(app_id, plugin_info, collect_period, retries=retries)
+		...
+		```
