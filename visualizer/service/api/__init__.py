@@ -24,7 +24,6 @@ try:
     address = config.get('general', 'host')
     port = config.getint('general', 'port')
     plugins = config.get('general', 'plugins').split(',')
-    visualizer = config.get('general', 'visualizer')
     datasources = config.get('general', 'datasources').split(',')
     use_debug = config.get('general', 'debug')
     retries = config.getint('general', 'retries')
@@ -35,19 +34,9 @@ try:
         if plugin != '' and plugin not in config.sections():
             raise Exception("plugin '%s' section missing" % plugin)
 
-    if 'kubejobs' in plugins:
-        k8s_conf_path = config.get('kubejobs', 'k8s_conf_path')
-        count_queue = config.get('kubejobs', 'count_queue')
-        redis_ip = config.get('kubejobs', 'redis_ip')
-
-    """ Validate if really exists a section to the visualizer """
-    if visualizer != '' and visualizer not in config.sections():
-        raise Exception("visualizer '%s' section missing" % visualizer)
-
     """ Grafana parameters """
-    if visualizer == 'k8s-grafana':
-        visualizer_user = config.get("k8s-grafana", "user")
-        visualizer_password = config.get("k8s-grafana", "password")
+    if 'k8s-grafana' in plugins:
+        k8s_conf_path = config.get('k8s-grafana', 'k8s_conf_path')
         visualizer_type = config.get("k8s-grafana", "visualizer_type")
         visualizer_ip = config.get("k8s-grafana", "visualizer_ip")  
 

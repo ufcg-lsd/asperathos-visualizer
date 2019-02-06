@@ -34,7 +34,9 @@ def start_visualization(data, app_id):
         None
     """
 
-    if 'plugin' not in data or 'enable_visualizer' not in data or 'visualizer_plugin' not in data or 'datasource_type' not in data: 
+    if 'plugin' not in data or 'enable_visualizer' not in data or \
+    'visualizer_plugin' not in data or 'datasource_type' not in data: 
+
         API_LOG.log("Missing parameters in request")
         raise ex.BadRequestException()
 
@@ -42,16 +44,23 @@ def start_visualization(data, app_id):
     enable_visualizer = data['enable_visualizer']
     visualizer_plugin = data['visualizer_plugin']
     datasource_type = data['datasource_type']
+    user = data['username']
+    password = data['password']
     
     if app_id not in visualized_apps:
         if 'database_data' in data:
             database_data = data['database_data']
-            executor = builder.get_visualizer(app_id, plugin, enable_visualizer, visualizer_plugin, datasource_type, database_data)
+            executor = builder.get_visualizer(app_id, plugin,
+            enable_visualizer, visualizer_plugin, 
+            datasource_type, user, password, database_data)
+
         else:
-            executor = builder.get_visualizer(app_id, plugin, enable_visualizer, visualizer_plugin, datasource_type)
+            executor = builder.get_visualizer(app_id, plugin,
+            enable_visualizer, visualizer_plugin, 
+            datasource_type, user, password)
 
         visualized_apps[app_id] = executor
-        executor.visualize_application()
+        executor.start_visualization()
 
     else:
         API_LOG.log("The application is already being visualized")
@@ -90,12 +99,9 @@ def stop_visualization(data, app_id):
         raise ex.BadRequestException()
 
     plugin = data['plugin']
-    visualizer_plugin = data['visualizer_plugin']
-    datasource_type = data['datasource_type']
-
     if plugin == 'kubejobs':
         # Call the executor by app_id and stop the visualization.
-        visualized_apps[app_id].delete_visualizer_resources(app_id, visualizer_plugin, datasource_type)
+        visualized_apps[app_id].stop_visualization()
 
         return visualized_apps[app_id]
 
@@ -112,7 +118,8 @@ def visualizer_url(app_id):
     if app_id not in visualized_apps.keys():
         API_LOG.log("Wrong request")
         raise ex.BadRequestException()
-
-    visualizer_url = visualized_apps[app_id].get_application_visualizer_url()
-
-    return {"url": visualizer_url}
+    try: 
+        url = visualized_apps[app_id].get_visualizer_url()
+    except Exception as ex:
+        print ex
+    return {"url": url}
