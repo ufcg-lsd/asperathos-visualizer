@@ -42,6 +42,6 @@ def get_visualizer_url(app_id):
     Normal response codes: 202
     Error response codes: 400
 """
-@rest.post('/visualizing/<app_id>/stop')
+@rest.put('/visualizing/<app_id>/stop')
 def stop_visualization(data, app_id):
     return u.render(api.stop_visualization(data, app_id))
