@@ -1,8 +1,5 @@
 *.idea/
 .tox/
-manager.cfg
-broker.cfg
-visualizer.cfg
 *.egg-info/
 dist/
 build/
