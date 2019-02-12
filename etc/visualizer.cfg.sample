@@ -1,0 +1,37 @@
+# Fl a s k c o n f i g u r a t i o n
+2 [ g e n e r a l ]
+3 # The h o s t where t h e v i s u a l i z e r s e r v i c e w i l l be d e pl o y e d
+4 h o s t = < h o s t _ i p >
+5 # The p o r t where t h e v i s u a l i z e r s e r v i c e w i l l be d e pl o y e d
+6 p o r t = < p o rt _ n um be r >
+7 # E n a ble d p l u g i n s
+8 # ’ k8s −g r af a n a ’ r e f f e r s t o t h e K u b e r n et e s −G r af a n a p l u g i n
+9 p l u g i n s = k8s −g r a f a n a
+10 # E n a ble d d a t a s o u r c e s
+11 d a t a s o u r c e s = i n f l u x d b
+12 # E n a ble o r d i s a b l e f l a s k debug
+13 debug = T r ue
+14 # How many r e t r i e s t h e s e r v i c e m u st do b e f o r e a b o r t
+15 # an v i s u a l i z a t i o n t a s k
+16 r e t r i e s = 5
+17
+18 # N e c e s s a r y v a r i a b l e s a b o ut k u b e r n e t e s −g r af a n a p l u g i n
+19 [ k8s −g r a f a n a ]
+20 # P at h t o t h e k u be c o n f i g f i l e
+21 k 8 s _ c o n f _ p at h = / p at h / t o / . kube / c o n f i g
+22 # V i s u a l i z e r t y p e t h a t w i l l be l a u n c h e d
+23 v i s u a l i z e r _ t y p e = k8s −g r a f a n a
+24 # H o st where t h e v i s u a l i z e r s e r v i c e w i l l be a c c e s s e d f r om
+25 # Needs t o be t h e i p o f one o f t h e h o s t s o f t h e c l u s t e r
+26 v i s u a l i z e r _ i p = < v i s u a l i z e r _ i p >
+27
+28 # N e c e s s a r y v a r i a b l e s a b o ut i n f l u x d b
+29 [ i n f l u x d b ]
+30 # Name o f t h e d a t a s o u r c e
+31 name = I n fl u xDB
+32 # Type o f t h e d a t a s o u r c e
+33 t y p e = i n f l u x d b
+34 # u r l where t h e d a t a s o u r c e s e r v i c e w i l l be a c c e s s e d f r om
+35 # Needs t o be t h e i p o f one o f t h e h o s t s o f t h e c l u s t e r
+36 u r l = < d a t a s o u r c e _ u r l >
+37 a c c e s s = p r o x y

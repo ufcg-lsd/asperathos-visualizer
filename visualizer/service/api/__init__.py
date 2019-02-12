@@ -18,7 +18,7 @@ import ConfigParser
 try:
     # Conf reading
     config = ConfigParser.RawConfigParser()
-    config.read('./visualizer.cfg')
+    config.read('./etc/visualizer.cfg')
     
     """ General configuration """
     address = config.get('general', 'host')
