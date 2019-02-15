@@ -14,6 +14,32 @@
 # limitations under the License.
 
 import ConfigParser
+import kubernetes as kube
+
+""" Gets the IP address of one a the node contained
+    in a Kubernetes cluster
+
+Raises:
+    Exception -- It was not possible to connect with the
+    Kubernetes cluster.
+
+Returns:
+    string -- The node IP
+"""
+
+def get_node_cluster(k8s_conf_path):
+
+    try:
+        kube.config.load_kube_config(k8s_conf_path)
+        CoreV1Api = kube.client.CoreV1Api()
+
+        node_info = CoreV1Api.list_node().items[0]
+        node_ip = node_info.status.addresses[0].address
+
+        return node_ip
+
+    except Exception:
+        print("Connection with the cluster %s was not successful" % k8s_conf_path)
 
 try:
     # Conf reading
@@ -36,9 +62,20 @@ try:
 
     """ Grafana parameters """
     if 'k8s-grafana' in plugins:
-        k8s_conf_path = config.get('k8s-grafana', 'k8s_conf_path')
+
+        # Setting default value
+        k8s_conf_path = "./data/conf"
+
+        # If explicitly stated in the cfg file, overwrite the variable
+        if(config.has_section('k8s-grafana')):
+            if(config.has_option('k8s-grafana', 'k8s_conf_path')):
+                k8s_conf_path = config.get('k8s-grafana', 'k8s_conf_path')
+            if(config.has_option('k8s-grafana', 'visualizer_ip')):
+                visualizer_ip = config.get("k8s-grafana", "visualizer_ip")
+            else:
+                visualizer_ip = get_node_cluster(k8s_conf_path)
+            
         visualizer_type = config.get("k8s-grafana", "visualizer_type")
-        visualizer_ip = config.get("k8s-grafana", "visualizer_ip")  
 
     for datasource in datasources: 
 
