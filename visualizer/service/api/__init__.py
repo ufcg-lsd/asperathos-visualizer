@@ -16,31 +16,6 @@
 import ConfigParser
 import kubernetes as kube
 
-""" Gets the IP address of one a the node contained
-    in a Kubernetes cluster
-
-Raises:
-    Exception -- It was not possible to connect with the
-    Kubernetes cluster.
-
-Returns:
-    string -- The node IP
-"""
-
-def get_node_cluster(k8s_conf_path):
-
-    try:
-        kube.config.load_kube_config(k8s_conf_path)
-        CoreV1Api = kube.client.CoreV1Api()
-
-        node_info = CoreV1Api.list_node().items[0]
-        node_ip = node_info.status.addresses[0].address
-
-        return node_ip
-
-    except Exception:
-        print("Connection with the cluster %s was not successful" % k8s_conf_path)
-
 try:
     # Conf reading
     config = ConfigParser.RawConfigParser()
@@ -72,8 +47,6 @@ try:
                 k8s_conf_path = config.get('k8s-grafana', 'k8s_conf_path')
             if(config.has_option('k8s-grafana', 'visualizer_ip')):
                 visualizer_ip = config.get("k8s-grafana", "visualizer_ip")
-            else:
-                visualizer_ip = get_node_cluster(k8s_conf_path)
             
         visualizer_type = config.get("k8s-grafana", "visualizer_type")
 
@@ -97,9 +70,34 @@ try:
         if 'influxdb' == datasource:
             influxdb_datasource_name = config.get("influxdb", "name")
             influxdb_datasource_type = config.get("influxdb", "type")
-            influxdb_datasource_url = config.get("influxdb", "url")
             influxdb_datasource_access = config.get("influxdb", "access")
             
 except Exception as e:
     print "Error: %s" % e.message
     quit()
+
+""" Gets the IP address of one a the node contained
+    in a Kubernetes cluster
+
+    Raises:
+        Exception -- It was not possible to connect with the
+        Kubernetes cluster.
+
+    Returns:
+        string -- The node IP
+    """
+
+def get_node_cluster(k8s_conf_path):
+    try:
+        kube.config.load_kube_config(k8s_conf_path)
+        CoreV1Api = kube.client.CoreV1Api()
+
+        node_number = len(CoreV1Api.list_node().items)
+
+        node_info = CoreV1Api.list_node().items[node_number - 1]
+        node_ip = node_info.status.addresses[0].address
+
+        return node_ip
+
+    except Exception:
+        print("Connection with the cluster %s was not successful" % k8s_conf_path)
