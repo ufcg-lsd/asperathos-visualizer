@@ -1,3 +1,6 @@
+mock
 six
 python-monascaclient==1.5.0
+pytest
+requests_mock
 kubernetes==8.0.0
