@@ -14,8 +14,6 @@
 # limitations under the License.
 
 import os
-import filecmp
-import shutil
 
 from visualizer.service import api
 from visualizer.utils.logger import Log
