@@ -133,6 +133,9 @@ class K8sGrafanaProgress(Plugin):
                     "env": [{
                         "name": "MASTER",
                         "value": str(True)
+                    }, {
+                        "name": "GF_SECURITY_ADMIN_PASSWORD",
+                        "value": self.grafana_password
                     }],
                     "ports": [{
                         "containerPort": grafana_port
@@ -299,7 +302,6 @@ class K8sGrafanaProgress(Plugin):
         self._create_grafana_pod()
         node_port = self._create_grafana_service()
 
-        # img = self.datasource.imagem
         visualizer_ip = self.visualizer_ip
         print("Created Grafana on address: %s:%d" % (visualizer_ip, node_port))
 
