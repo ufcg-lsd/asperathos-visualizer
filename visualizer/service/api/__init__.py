@@ -16,6 +16,8 @@
 import ConfigParser
 import kubernetes as kube
 
+CONFIG_PATH = "./data/conf"
+
 try:
     # Conf reading
     config = ConfigParser.RawConfigParser()
@@ -39,7 +41,7 @@ try:
     if 'k8s-grafana' in plugins:
 
         # Setting default value
-        k8s_conf_path = "./data/conf"
+        k8s_conf_path = CONFIG_PATH
 
         # If explicitly stated in the cfg file, overwrite the variable
         if(config.has_section('k8s-grafana')):
@@ -85,8 +87,7 @@ except Exception as e:
 
     Returns:
         string -- The node IP
-    """
-
+"""
 def get_node_cluster(k8s_conf_path):
     try:
         kube.config.load_kube_config(k8s_conf_path)
