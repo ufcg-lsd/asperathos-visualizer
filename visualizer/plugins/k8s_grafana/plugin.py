@@ -51,7 +51,12 @@ class K8sGrafanaProgress(Plugin):
             raise Exception("ERROR: Datasource type unknown...!")
 
         self.visualizer_type = api.visualizer_type
-        self.visualizer_ip = api.visualizer_ip # FIXME(rafael): get node ip from k8s api instead of config
+
+        # Gets the visualizer ip if the value is not explicitic in the config file
+        try:
+            self.visualizer_ip = api.visualizer_ip
+        except AttributeError:
+            self.visualizer_ip = api.get_node_cluster(api.k8s_conf_path)
 
     def start_visualization(self):
         """ Starts the visualization of the job
@@ -318,5 +323,3 @@ class K8sGrafanaProgress(Plugin):
             print("Timed out waiting for Grafana to be available.")
             print("Grafana address: %s:%d" % (visualizer_ip, node_port))
             self.datasource.delete_visualizer_resources(app_id)
-
-    

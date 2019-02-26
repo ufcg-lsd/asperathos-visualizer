@@ -14,3 +14,5 @@ manager.cfg.lsd
 *.lsd.ufcg.edu.br.txt
 /logs
 .vscode/
+data/conf
+data/clusters
