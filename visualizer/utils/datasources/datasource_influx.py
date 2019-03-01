@@ -22,12 +22,17 @@ import kubernetes as kube
 
 from visualizer.utils.datasources.datasource_base import Base
 from visualizer.service import api
+from visualizer.utils.logger import Log
+
+LOG_FILE = "influx-ds.log"
+LOG_NAME = "influx-ds"
 
 class InfluxDataSource(Base):
 
     def __init__(self, monitor_plugin, database_data, app_id):
         Base.__init__(self, app_id, api.influxdb_datasource_name, api.influxdb_datasource_type)
         # Compute necessary variables
+        self.LOG = Log(LOG_NAME, LOG_FILE)
         self.datasource_access = api.influxdb_datasource_access
         self.datasource_url = database_data['url']
         self.datasource_port = database_data['port']
@@ -93,18 +98,18 @@ class InfluxDataSource(Base):
         name = "%s-%s" % (visualizer_type, self.app_id)
 
         # Deleting Pod
-        print("Deleting %s Pod for job %s..." % (visualizer_type, self.app_id))
+        self.LOG.log("Deleting %s Pod for job %s..." % (visualizer_type, self.app_id))
         CoreV1Api.delete_namespaced_pod(
             name=name, namespace=namespace, body=delete)
 
         # Deleting service
-        print("Deleting %s Service for job %s" % (visualizer_type, self.app_id))
+        self.LOG.log("Deleting %s Service for job %s" % (visualizer_type, self.app_id))
         CoreV1Api.delete_namespaced_service(
             name=name, namespace=namespace, body=delete)
 
         influxdb_name = "%s-%s" % (self.datasource_type, self.app_id)
         # Deleting Pod
-        print("Deleting InfluxDB resources...")
+        self.LOG.log("Deleting InfluxDB resources...")
         CoreV1Api.delete_namespaced_pod(
             name=influxdb_name, namespace=namespace, body=delete)
 

@@ -25,9 +25,10 @@ from visualizer.service import api
 from visualizer.plugins.base import Plugin
 from visualizer.utils.datasources.datasource_influx import InfluxDataSource
 from visualizer.utils.datasources.datasource_monasca import MonascaDataSource
+from visualizer.utils.logger import Log
 
-LOG_FILE = "progress.log"
-TIME_PROGRESS_FILE = "time_progress.log"
+LOG_FILE = "k8s-grafana.log"
+LOG_NAME = "k8s-grafana"
 MONITORING_INTERVAL = 2
 
 class K8sGrafanaProgress(Plugin):
@@ -36,6 +37,7 @@ class K8sGrafanaProgress(Plugin):
         Plugin.__init__(self, app_id, enable_visualizer, timeout)
         # Compute necessary variables
         kube.config.load_kube_config(api.k8s_conf_path)
+        self.LOG = Log(LOG_NAME, LOG_FILE)
         self.visualizer_url = "URL not generated!"
         self.datasource = datasource_type
         self.monitor_plugin = monitor_plugin
@@ -73,7 +75,7 @@ class K8sGrafanaProgress(Plugin):
             self.grafana_user, self.grafana_password, timeout=self.timeout)
 
         except Exception as e:
-            print(e)
+            self.LOG.log(e)
 
     def stop_visualization(self):
         """ Stop visualizer service and delete all resources
@@ -83,8 +85,8 @@ class K8sGrafanaProgress(Plugin):
         Returns: 
             None
         """
-        print "The %s is stopping for %s..." % (type(self).__name__,
-                                                self.app_id)
+        self.LOG.log("The %s is stopping for %s..." % (type(self).__name__,
+                                                self.app_id))
         self.running = False
         self._delete_visualizer_resources()
     
@@ -192,12 +194,12 @@ class K8sGrafanaProgress(Plugin):
         grafana_pod_spec = self._get_grafana_pod_spec()
         CoreV1Api = kube.client.CoreV1Api()
         try:
-            print("Creating Grafana Pod...")
+            self.LOG.log("Creating Grafana Pod...")
             CoreV1Api.create_namespaced_pod(
                 namespace=namespace, body=grafana_pod_spec)
-            print("Grafana Pod Created...!")
+            self.LOG.log("Grafana Pod Created...!")
         except kube.client.rest.ApiException as e:
-            print(e)
+            self.LOG.log(e)
 
     def _create_grafana_service(self, namespace='default'):
         """ Create the Service for grafana
@@ -212,12 +214,12 @@ class K8sGrafanaProgress(Plugin):
         CoreV1Api = kube.client.CoreV1Api()
         node_port = None
         try:
-            print("Creating Grafana Service...")
+            self.LOG.log("Creating Grafana Service...")
             s = CoreV1Api.create_namespaced_service(
                 namespace=namespace, body=grafana_svc_spec)
             node_port = s.spec.ports[0].node_port
         except kube.client.rest.ApiException as e:
-            print(e)
+            self.LOG.log(e)
         return node_port
 
 
@@ -237,18 +239,18 @@ class K8sGrafanaProgress(Plugin):
         """
         start = time.time()
         ready = False
-        print("Trying Grafana on %s:%s..." % (visualizer_ip, node_port))
+        self.LOG.log("Trying Grafana on %s:%s..." % (visualizer_ip, node_port))
         while time.time() - start < timeout:
             time.sleep(5)
             datasource_result = self.datasource.create_grafana_datasource(
                             grafana_user, grafana_password, visualizer_ip, node_port)
             if(datasource_result):
-                print("Connected to Grafana on %s:%s!" % (visualizer_ip, node_port))
-                print("Data source created on Grafana")
+                self.LOG.log("Connected to Grafana on %s:%s!" % (visualizer_ip, node_port))
+                self.LOG.log("Data source created on Grafana")
                 ready = True
                 break
             else:
-                print("Grafana is not ready yet!")
+                self.LOG.log("Grafana is not ready yet!")
         return ready
 
 
@@ -268,18 +270,18 @@ class K8sGrafanaProgress(Plugin):
         """
         start = time.time()
         ready = False
-        print("Trying to generate dashboard for Grafana on %s:%d..." % (visualizer_ip, node_port))
+        self.LOG.log("Trying to generate dashboard for Grafana on %s:%d..." % (visualizer_ip, node_port))
         while time.time() - start < timeout:
             time.sleep(5)
             dashboard_result = self.datasource.create_grafana_dashboard(
                         grafana_user, grafana_password, visualizer_ip, node_port)
             if(dashboard_result):
-                print("Dashboard of the job created on: http://%s:%s" % (visualizer_ip, node_port))
+                self.LOG.log("Dashboard of the job created on: http://%s:%s" % (visualizer_ip, node_port))
                 self.visualizer_url = "http://%s:%s" % (visualizer_ip, node_port)
                 ready = True
                 break
             else:
-                print("Grafana is not ready yet!")
+                self.LOG.log("Grafana is not ready yet!")
         return ready
 
 
@@ -303,7 +305,7 @@ class K8sGrafanaProgress(Plugin):
         node_port = self._create_grafana_service()
 
         visualizer_ip = self.visualizer_ip
-        print("Created Grafana on address: %s:%d" % (visualizer_ip, node_port))
+        self.LOG.log("Created Grafana on address: %s:%d" % (visualizer_ip, node_port))
 
         # Check when the visualizer is ready to create the datasource and dashboard
 
@@ -320,6 +322,6 @@ class K8sGrafanaProgress(Plugin):
             else: raise Exception("Could not provision Grafana!")
 
         except Exception as ex:
-            print("Timed out waiting for Grafana to be available.")
-            print("Grafana address: %s:%d" % (visualizer_ip, node_port))
+            self.LOG.log("Timed out waiting for Grafana to be available.")
+            self.LOG.log("Grafana address: %s:%d" % (visualizer_ip, node_port))
             self.datasource.delete_visualizer_resources(app_id)
