@@ -22,12 +22,17 @@ import kubernetes as kube
 
 from visualizer.utils.datasources.datasource_base import Base
 from visualizer.service import api
+from visualizer.utils.logger import Log
+
+LOG_FILE = "monasca-ds.log"
+LOG_NAME = "monasca-ds"
 
 class MonascaDataSource(Base):
 
     def __init__(self, app_id):
         Base.__init__(self, app_id, api.monasca_datasource_name, api.monasca_datasource_type)
         # Compute necessary variables
+        self.LOG = Log(LOG_NAME, LOG_FILE)
         self.datasource_access = api.monasca_datasource_access
         self.datasource_url = api.monasca_datasource_url
         self.datasource_basic_auth = api.monasca_datasource_basic_auth
@@ -94,11 +99,11 @@ class MonascaDataSource(Base):
         name = "%s-%s" % (visualizer_type, self.app_id)
 
         # Deleting Pod
-        print("Deleting %s Pod for job %s..." % (visualizer_type, self.app_id))
+        self.LOG.log("Deleting %s Pod for job %s..." % (visualizer_type, self.app_id))
         CoreV1Api.delete_namespaced_pod(
             name=name, namespace=namespace, body=delete)
 
         # Deleting service
-        print("Deleting %s Service for job %s" % (visualizer_type, self.app_id))
+        self.LOG.log("Deleting %s Service for job %s" % (visualizer_type, self.app_id))
         CoreV1Api.delete_namespaced_service(
             name=name, namespace=namespace, body=delete)
