@@ -22,7 +22,7 @@ try:
     # Conf reading
     config = ConfigParser.RawConfigParser()
     config.read('./visualizer.cfg')
-    
+
     """ General configuration """
     address = config.get('general', 'host')
     port = config.getint('general', 'port')
@@ -49,10 +49,10 @@ try:
                 k8s_conf_path = config.get('k8s-grafana', 'k8s_conf_path')
             if(config.has_option('k8s-grafana', 'visualizer_ip')):
                 visualizer_ip = config.get("k8s-grafana", "visualizer_ip")
-            
+
         visualizer_type = config.get("k8s-grafana", "visualizer_type")
 
-    for datasource in datasources: 
+    for datasource in datasources:
 
         """ Validate if really exists a section to the datasource """
         if datasource != '' and datasource not in config.sections():
@@ -66,14 +66,14 @@ try:
             monasca_datasource_access = config.get("monasca", "access")
             monasca_datasource_basic_auth = config.getboolean("monasca", "basic_auth")
             monasca_datasource_auth_type = config.get("monasca", "auth_type")
-            monasca_datasource_token = config.get("monasca", "token")  
-        
+            monasca_datasource_token = config.get("monasca", "token")
+
         """ InfluxDB parameters """
         if 'influxdb' == datasource:
             influxdb_datasource_name = config.get("influxdb", "name")
             influxdb_datasource_type = config.get("influxdb", "type")
             influxdb_datasource_access = config.get("influxdb", "access")
-            
+
 except Exception as e:
     print "Error: %s" % e.message
     quit()
@@ -92,13 +92,11 @@ def get_node_cluster(k8s_conf_path):
     try:
         kube.config.load_kube_config(k8s_conf_path)
         CoreV1Api = kube.client.CoreV1Api()
-
-        node_number = len(CoreV1Api.list_node().items)
-
-        node_info = CoreV1Api.list_node().items[node_number - 1]
+        for node in CoreV1Api.list_node().items:
+            is_ready = [s for s in node.status.conditions if s.type == 'Ready'][0].status == 'True'
+            if is_ready:
+                node_info = node
         node_ip = node_info.status.addresses[0].address
-
         return node_ip
-
     except Exception:
-        print("Connection with the cluster %s was not successful" % k8s_conf_path)
+        API_LOG.log("Connection with the cluster %s was not successful" % k8s_conf_path)
