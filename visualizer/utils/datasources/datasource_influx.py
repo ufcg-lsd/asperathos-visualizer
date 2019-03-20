@@ -24,13 +24,20 @@ from visualizer.utils.datasources.datasource_base import Base
 from visualizer.service import api
 from visualizer.utils.logger import Log
 
+K8S_TEMPLATE_PATH = \
+    './visualizer/utils/templates/dashboard-job-influxdb-kubejobs.template'
+VERTICAL_TEMPLATE_PATH = \
+    './visualizer/utils/templates/dashboard-job-influxdb-vertical.template'
+
 LOG_FILE = "influx-ds.log"
 LOG_NAME = "influx-ds"
+
 
 class InfluxDataSource(Base):
 
     def __init__(self, monitor_plugin, database_data, app_id):
-        Base.__init__(self, app_id, api.influxdb_datasource_name, api.influxdb_datasource_type)
+        Base.__init__(self, app_id, api.influxdb_datasource_name,
+                      api.influxdb_datasource_type)
         # Compute necessary variables
         self.LOG = Log(LOG_NAME, LOG_FILE)
         self.datasource_access = api.influxdb_datasource_access
@@ -38,19 +45,24 @@ class InfluxDataSource(Base):
         self.datasource_port = database_data['port']
         self.database_name = database_data['name']
         if(monitor_plugin == 'kubejobs'):
-            self.dashboard_path = './visualizer/utils/templates/dashboard-job-influxdb-kubejobs.template'
+            self.dashboard_path = K8S_TEMPLATE_PATH
+
         elif(monitor_plugin == 'external_api'):
-            self.dashboard_path = './visualizer/utils/templates/dashboard-job-influxdb-vertical.template'
+            self.dashboard_path = VERTICAL_TEMPLATE_PATH
+
         self.image = 'grafana/grafana:5.4.2'
 
-    def create_grafana_datasource(self, user, password, visualizer_ip, node_port):
-       
-        url = "http://%s:%s@%s:%d/api/datasources" % (user, password, visualizer_ip, node_port)
+    def create_grafana_datasource(self, user, password,
+                                  visualizer_ip, node_port):
+
+        url = "http://%s:%s@%s:%d/api/datasources" %\
+            (user, password, visualizer_ip, node_port)
 
         data_ds = {
             "name": self.datasource_name,
             "type": self.datasource_type,
-            "url":"http://%s:%d" % (self.datasource_url, self.datasource_port),
+            "url": "http://%s:%d" % (self.datasource_url,
+                                     self.datasource_port),
             "access": self.datasource_access,
             "database": self.database_name
         }
@@ -62,12 +74,14 @@ class InfluxDataSource(Base):
         try:
             requests.post(url, data=data, headers=headers)
         except requests.exceptions.ConnectionError:
-            successful_request = False        
+            successful_request = False
         return successful_request
 
-    def create_grafana_dashboard(self, user, password, visualizer_ip, node_port):
-    
-        url = "http://%s:%s@%s:%s/api/dashboards/db" % (user, password, visualizer_ip, node_port)
+    def create_grafana_dashboard(self, user, password,
+                                 visualizer_ip, node_port):
+
+        url = "http://%s:%s@%s:%s/api/dashboards/db" %\
+            (user, password, visualizer_ip, node_port)
 
         opened = open(self.dashboard_path)
 
@@ -84,10 +98,11 @@ class InfluxDataSource(Base):
             successful_request = False
 
         return successful_request
-        
 
-    def delete_visualizer_resources(self, visualizer_type='grafana', namespace="default"):
-    
+    def delete_visualizer_resources(self,
+                                    visualizer_type='grafana',
+                                    namespace="default"):
+
         # load kubernetes config
         kube.config.load_kube_config(api.k8s_conf_path)
 
@@ -98,21 +113,27 @@ class InfluxDataSource(Base):
         name = "%s-%s" % (visualizer_type, self.app_id)
 
         # Deleting Pod
-        self.LOG.log("Deleting %s Pod for job %s..." % (visualizer_type, self.app_id))
+        self.LOG.log("Deleting %s Pod for job %s..." %
+                     (visualizer_type, self.app_id))
         CoreV1Api.delete_namespaced_pod(
             name=name, namespace=namespace, body=delete)
 
         # Deleting service
-        self.LOG.log("Deleting %s Service for job %s" % (visualizer_type, self.app_id))
+        self.LOG.log("Deleting %s Service for job %s" %
+                     (visualizer_type, self.app_id))
         CoreV1Api.delete_namespaced_service(
             name=name, namespace=namespace, body=delete)
 
         influxdb_name = "%s-%s" % (self.datasource_type, self.app_id)
         # Deleting Pod
         self.LOG.log("Deleting InfluxDB resources...")
-        CoreV1Api.delete_namespaced_pod(
-            name=influxdb_name, namespace=namespace, body=delete)
+        CoreV1Api.\
+            delete_namespaced_pod(name=influxdb_name,
+                                  namespace=namespace,
+                                  body=delete)
 
         # Deleting service
-        CoreV1Api.delete_namespaced_service(
-        name=influxdb_name, namespace=namespace, body=delete)
+        CoreV1Api.\
+            delete_namespaced_service(name=influxdb_name,
+                                      namespace=namespace,
+                                      body=delete)

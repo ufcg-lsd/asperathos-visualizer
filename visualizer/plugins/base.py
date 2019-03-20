@@ -14,9 +14,10 @@
 # limitations under the License.
 
 import threading
-import time
 
 # Plugins must extend Thread to facilitate each parallel plugin execution
+
+
 class Plugin(threading.Thread):
 
     def __init__(self, app_id, enable_visualizer, timeout=60):

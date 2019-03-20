@@ -14,11 +14,13 @@
 # limitations under the License.
 import pytest
 import json
-from mock import patch
 from unittest import TestCase
 from requests_mock import Mocker
-from visualizer.tests.fixtures import tmp_file
+from visualizer.tests import fixtures
 from visualizer.utils.datasources.datasource_influx import InfluxDataSource
+
+tmp_file = fixtures.tmp_file
+
 
 @pytest.mark.usefixtures("tmp_file")
 class TestInfluxDataSource(TestCase):
@@ -41,16 +43,20 @@ class TestInfluxDataSource(TestCase):
         node_port = 54321
 
         with Mocker() as m:
-            m.post("http://%s:%s@%s:%d/api/datasources" % (user, password, visualizer_ip, node_port))
+            m.post("http://%s:%s@%s:%d/api/datasources" % (user,
+                                                           password,
+                                                           visualizer_ip,
+                                                           node_port))
 
-            result = self.influx.create_grafana_datasource(user, 
-                                                    password, visualizer_ip, node_port)
+            result = self.influx.create_grafana_datasource(user,
+                                                           password,
+                                                           visualizer_ip,
+                                                           node_port)
             self.assertTrue(result)
             self.assertTrue(m.called)
             self.assertEqual(m.call_count, 1)
 
     def test_create_grafana_dashboard(self):
-        tmp_file = self.tmp_file
         user = "test"
         password = "test123"
         visualizer_ip = "192.168.1.90"
@@ -60,17 +66,21 @@ class TestInfluxDataSource(TestCase):
             "test": "test"
             }
 
-        tmp_file.write_text(json.dumps(template).decode('utf-8'))
-        self.influx.dashboard_path = str(tmp_file.resolve())
+        self.tmp_file.write_text(json.dumps(template).decode('utf-8'))
+        self.influx.dashboard_path = str(self.tmp_file.resolve())
 
         with Mocker() as m:
 
-            m.post("http://%s:%s@%s:%s/api/dashboards/db" % (user, password, visualizer_ip, node_port))
+            m.post("http://%s:%s@%s:%s/api/dashboards/db" % (user,
+                                                             password,
+                                                             visualizer_ip,
+                                                             node_port))
 
-            result = self.influx.create_grafana_dashboard(user, 
-                                                    password, visualizer_ip, node_port)
+            result = self.influx.create_grafana_dashboard(user,
+                                                          password,
+                                                          visualizer_ip,
+                                                          node_port)
             self.assertTrue(result)
             self.assertTrue(m.called)
             self.assertEqual(m.call_count, 1)
             self.assertEquals(m.last_request.json(), template)
-
