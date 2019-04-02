@@ -53,8 +53,6 @@ class K8sGrafanaProgress(Plugin):
         else:
             raise Exception("ERROR: Datasource type unknown...!")
 
-        self.visualizer_type = api.visualizer_type
-
         # Gets the visualizer ip if the value is not explicitic in the config
         # file
         try:

@@ -12,7 +12,6 @@ retries = 5
 
 [plugin1]
 k8s_conf_path = /home/user/.kube/config
-visualizer_type = plugin1
 visualizer_ip = 127.0.0.1
 
 [datasource1]
