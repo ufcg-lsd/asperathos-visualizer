@@ -52,8 +52,6 @@ try:
             if(config.has_option('k8s-grafana', 'visualizer_ip')):
                 visualizer_ip = config.get("k8s-grafana", "visualizer_ip")
 
-        visualizer_type = config.get("k8s-grafana", "visualizer_type")
-
     for datasource in datasources:
 
         """ Validate if really exists a section to the datasource """
