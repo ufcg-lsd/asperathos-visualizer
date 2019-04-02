@@ -21,11 +21,13 @@ from visualizer.plugins.base import Plugin
 Class that represents the tests of the base plugin for a visualizer
 """
 
+
 class TestBase(unittest.TestCase):
 
     """
     Set up Base Plugin object
-    """ 
+    """
+
     def setUp(self):
         self.base01 = Plugin('0001', True)
         self.base02 = Plugin('0002', False, 30)
@@ -36,6 +38,7 @@ class TestBase(unittest.TestCase):
     """
     Test the constructor for the base plugin
     """
+
     def testInit(self):
 
         self.assertTrue(self.base01.enable_visualizer)

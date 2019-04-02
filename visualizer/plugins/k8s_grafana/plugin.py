@@ -16,8 +16,6 @@
 # limitations under the License.
 
 import time
-import requests
-import json
 
 import kubernetes as kube
 
@@ -31,9 +29,11 @@ LOG_FILE = "k8s-grafana.log"
 LOG_NAME = "k8s-grafana"
 MONITORING_INTERVAL = 2
 
+
 class K8sGrafanaProgress(Plugin):
 
-    def __init__(self, app_id, monitor_plugin, enable_visualizer, datasource_type, user, password, database_data, timeout=60):
+    def __init__(self, app_id, monitor_plugin, enable_visualizer,
+                 datasource_type, user, password, database_data, timeout=60):
         Plugin.__init__(self, app_id, enable_visualizer, timeout)
         # Compute necessary variables
         kube.config.load_kube_config(api.k8s_conf_path)
@@ -46,7 +46,8 @@ class K8sGrafanaProgress(Plugin):
         self.grafana_user = user
         self.grafana_password = password
         if datasource_type == 'influxdb':
-            self.datasource = InfluxDataSource(monitor_plugin, database_data, app_id)
+            self.datasource = InfluxDataSource(
+                monitor_plugin, database_data, app_id)
         elif datasource_type == 'monasca':
             self.datasource = MonascaDataSource(app_id)
         else:
@@ -54,7 +55,8 @@ class K8sGrafanaProgress(Plugin):
 
         self.visualizer_type = api.visualizer_type
 
-        # Gets the visualizer ip if the value is not explicitic in the config file
+        # Gets the visualizer ip if the value is not explicitic in the config
+        # file
         try:
             self.visualizer_ip = api.visualizer_ip
         except AttributeError:
@@ -62,60 +64,62 @@ class K8sGrafanaProgress(Plugin):
 
     def start_visualization(self):
         """ Starts the visualization of the job
-        
+
         Arguments:
             None
-        
+
         Returns:
             None
         """
 
-        try:    
-            self._create_grafana_components(self.app_id, 
-            self.grafana_user, self.grafana_password, timeout=self.timeout)
+        try:
+            self._create_grafana_components(self.app_id,
+                                            self.grafana_user,
+                                            self.grafana_password,
+                                            timeout=self.timeout)
 
         except Exception as e:
             self.LOG.log(e)
 
     def stop_visualization(self):
         """ Stop visualizer service and delete all resources
-        
-        Arguments: 
+
+        Arguments:
             None
-        Returns: 
+        Returns:
             None
         """
         self.LOG.log("The %s is stopping for %s..." % (type(self).__name__,
-                                                self.app_id))
+                                                       self.app_id))
         self.running = False
         self._delete_visualizer_resources()
-    
+
     def get_visualizer_url(self):
         """ Gets the url to the visualizer of the specific job
-        
-        Arguments: 
+
+        Arguments:
             None
         Returns:
           String -- The url of the visualizer
         """
         return self.visualizer_url
-    
+
     def _delete_visualizer_resources(self, visualizer_type='grafana'):
         """Delete visualizer resources (Pod and Service) of a specific job
-        
+
         Arguments:
             None or visualizer_type {string} -- Type of visualizer service
         Returns:
             None
         """
         self.datasource.delete_visualizer_resources(visualizer_type)
-      
+
     def _get_grafana_pod_spec(self, grafana_port=3000):
         """ Create the Pod spec for grafana
-        
+
         Arguments:
             grafana_port {int} -- Port that the grafana will serve
-        
+
         Returns:
             Dict -- Dict with specs of grafana pod
         """
@@ -150,10 +154,10 @@ class K8sGrafanaProgress(Plugin):
 
     def _get_grafana_service_spec(self, port=3000):
         """ Create the Service spec for grafana
-        
+
         Arguments:
             grafana_port {int} -- Port that the grafana will serve
-        
+
         Returns:
             Dict -- Dict with specs of grafana service
         """
@@ -162,7 +166,7 @@ class K8sGrafanaProgress(Plugin):
             "apiVersion": "v1",
             "kind": "Service",
             "metadata": {
-                "name":"grafana-%s" % self.app_id,
+                "name": "grafana-%s" % self.app_id,
                 "labels": {
                     "app": "grafana-%s" % self.app_id
                 }
@@ -184,10 +188,11 @@ class K8sGrafanaProgress(Plugin):
 
     def _create_grafana_pod(self, namespace='default'):
         """ Create the Pod for grafana
-        
+
         Arguments:
-            namespace {string} -- Namespace that the grafana pod will be created
-        
+            namespace {string} -- Namespace
+            that the grafana pod will be created
+
         Returns:
             None
         """
@@ -203,10 +208,11 @@ class K8sGrafanaProgress(Plugin):
 
     def _create_grafana_service(self, namespace='default'):
         """ Create the Service for grafana
-        
+
         Arguments:
-            namespace {string} -- Namespace that the grafana service will be created
-        
+            namespace {string} -- Namespace
+            that the grafana service will be created
+
         Returns:
             None
         """
@@ -222,18 +228,19 @@ class K8sGrafanaProgress(Plugin):
             self.LOG.log(e)
         return node_port
 
-
     def _create_datasource(self, grafana_user, grafana_password,
-                                    visualizer_ip, node_port, timeout):
+                           visualizer_ip, node_port, timeout):
         """ Create the Datasource in grafana
-        
+
         Arguments:
-            grafana_user {string} -- Grafana's user with the necessary permissions
+            grafana_user {string} -- Grafana's
+            user with the necessary permissions
             grafana_password {string} -- Password of the Grafana user
-            visualizer_ip {string} -- IP of one of the slaves that will be used to access the visualizer
+            visualizer_ip {string} -- IP of one of
+            the slaves that will be used to access the visualizer
             node_port {string} -- Port where the visualizer will be running
             timeout {int} -- Max time that will try create datasource
-        
+
         Returns:
             Boolean -- State of creation of datasource
         """
@@ -243,9 +250,11 @@ class K8sGrafanaProgress(Plugin):
         while time.time() - start < timeout:
             time.sleep(5)
             datasource_result = self.datasource.create_grafana_datasource(
-                            grafana_user, grafana_password, visualizer_ip, node_port)
+                grafana_user, grafana_password, visualizer_ip, node_port)
             if(datasource_result):
-                self.LOG.log("Connected to Grafana on %s:%s!" % (visualizer_ip, node_port))
+                self.LOG.log(
+                    "Connected to Grafana on %s:%s!" %
+                    (visualizer_ip, node_port))
                 self.LOG.log("Data source created on Grafana")
                 ready = True
                 break
@@ -253,50 +262,57 @@ class K8sGrafanaProgress(Plugin):
                 self.LOG.log("Grafana is not ready yet!")
         return ready
 
-
     def _create_dashboard(self, grafana_user, grafana_password,
-                                    visualizer_ip, node_port, timeout):
+                          visualizer_ip, node_port, timeout):
         """ Create the Datasource in grafana
-        
+
         Arguments:
-            grafana_user {string} -- Grafana's user with the necessary permissions
+            grafana_user {string} -- Grafana's
+            user with the necessary permissions
             grafana_password {string} -- Password of the Grafana user
-            visualizer_ip {string} -- IP of one of the slaves that will be used to access the visualizer
+            visualizer_ip {string} -- IP of oneof the
+            slaves that will be used to access the visualizer
             node_port {string} -- Port where the visualizer will be running
             timeout {int} -- Max time that will try create dashboard
-            
+
         Returns:
             Boolean -- State of creation of dashboard
         """
         start = time.time()
         ready = False
-        self.LOG.log("Trying to generate dashboard for Grafana on %s:%d..." % (visualizer_ip, node_port))
+        self.LOG.log(
+            "Trying to generate dashboard for Grafana on %s:%d..." %
+            (visualizer_ip, node_port))
         while time.time() - start < timeout:
             time.sleep(5)
             dashboard_result = self.datasource.create_grafana_dashboard(
-                        grafana_user, grafana_password, visualizer_ip, node_port)
+                grafana_user, grafana_password, visualizer_ip, node_port)
             if(dashboard_result):
-                self.LOG.log("Dashboard of the job created on: http://%s:%s" % (visualizer_ip, node_port))
-                self.visualizer_url = "http://%s:%s" % (visualizer_ip, node_port)
+                self.LOG.log(
+                    "Dashboard of the job created on: http://%s:%s" %
+                    (visualizer_ip, node_port))
+                self.visualizer_url = "http://%s:%s" % (
+                    visualizer_ip, node_port)
                 ready = True
                 break
             else:
                 self.LOG.log("Grafana is not ready yet!")
         return ready
 
-
-    def _create_grafana_components(self, app_id, grafana_user, grafana_password, 
-                                    namespace="default", visualizer_port=3000, timeout=60):
+    def _create_grafana_components(self, app_id, grafana_user,
+                                   grafana_password, namespace="default",
+                                   visualizer_port=3000, timeout=60):
         """ Generates a individual visualizer dashboard for the Job.
-        Create a Pod for the visualizer and expose it through a NodePort Service.
-        
+        Create a Pod for the visualizer
+        and expose it through a NodePort Service.
+
         Arguments:
             app_id {string} -- Id of the job launched
             img {string} -- Image grafana of the container
             namespace {string} -- pods's namespace
             visualizer_port {int} -- container's port
             timeout_id {int} -- timeout of the function
-        
+
         Returns:
             tuple -- A pair with the ip and port running the grafana service
         """
@@ -305,23 +321,33 @@ class K8sGrafanaProgress(Plugin):
         node_port = self._create_grafana_service()
 
         visualizer_ip = self.visualizer_ip
-        self.LOG.log("Created Grafana on address: %s:%d" % (visualizer_ip, node_port))
+        self.LOG.log(
+            "Created Grafana on address: %s:%d" %
+            (visualizer_ip, node_port))
 
-        # Check when the visualizer is ready to create the datasource and dashboard
+        # Check when the visualizer is ready to create the datasource and
+        # dashboard
 
         try:
-            datasource_created = self._create_datasource(grafana_user, grafana_password,
-                                    visualizer_ip, node_port, timeout)
+            datasource_created = self._create_datasource(grafana_user,
+                                                         grafana_password,
+                                                         visualizer_ip,
+                                                         node_port,
+                                                         timeout)
 
-            dashboard_created = self._create_dashboard(grafana_user, grafana_password,
-                                    visualizer_ip, node_port, timeout)
+            dashboard_created = self._create_dashboard(grafana_user,
+                                                       grafana_password,
+                                                       visualizer_ip,
+                                                       node_port,
+                                                       timeout)
 
             if datasource_created and dashboard_created:
                 return visualizer_ip, node_port
-            
-            else: raise Exception("Could not provision Grafana!")
 
-        except Exception as ex:
+            else:
+                raise Exception("Could not provision Grafana!")
+
+        except Exception:
             self.LOG.log("Timed out waiting for Grafana to be available.")
             self.LOG.log("Grafana address: %s:%d" % (visualizer_ip, node_port))
             self.datasource.delete_visualizer_resources(app_id)

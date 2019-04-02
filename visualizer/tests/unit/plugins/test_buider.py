@@ -24,11 +24,13 @@ Class that represents the tests of the Visualizer builder
 
 """
 
+
 class TestBuilder(unittest.TestCase):
 
     """
     Set up Builder object
-    """ 
+    """
+
     def setUp(self):
         self.builder = VisualizerBuilder()
 
@@ -39,15 +41,21 @@ class TestBuilder(unittest.TestCase):
     Test if the correct instance of the plugin is being
     build.
     """
-    @pytest.mark.skip(reason="Can only be executed with a real kube-config cluster informed.")
+    @pytest.mark.skip(
+        reason="Can only be executed with a real \
+            kube-config cluster informed.")
     def test_builder(self):
-        visualizer01 = self.builder.get_visualizer('0002', 'kubejobs', True, 
-                                            'k8s-grafana', 'monasca',
-                                            'usr', 'psswrd')
+        visualizer01 = self.builder.get_visualizer('0002', 'kubejobs', True,
+                                                   'k8s-grafana', 'monasca',
+                                                   'usr', 'psswrd')
 
         self.assertTrue(isinstance(visualizer01, K8sGrafanaProgress))
 
         with self.assertRaises(Exception):
-            visualizer02 = self.builder.get_visualizer('0002', 'unidentified-plugin', True, 
-                                                'unidentified-visualizer-plugin', 'unidentified-monasca',
-                                                'usr', 'psswrd')
+            self.builder.get_visualizer('0002',
+                                        'unidentified-plugin',
+                                        True,
+                                        'unidentified-\
+                                            visualizer-plugin',
+                                        'unidentified-monasca',
+                                        'usr', 'psswrd')

@@ -14,37 +14,49 @@
 # limitations under the License.
 
 from visualizer import exceptions as ex
-from visualizer.service import api
 from visualizer.plugins.k8s_grafana.plugin import K8sGrafanaProgress
 
 """ Generates a visualizer builder of different types of visualizer.
     This class selects the type of visualizer that will be launched
     according with the user choice.
 """
+
+
 class VisualizerBuilder:
 
     def __init__(self):
         pass
 
-    def get_visualizer(self, app_id, plugin, enable_visualizer, 
-    visualizer, datasource, user, password, database_data={}):
+    def get_visualizer(self, app_id, plugin,
+                       enable_visualizer, visualizer,
+                       datasource, user, password,
+                       database_data={}):
         """ Gets the visualizer executor of the job
-        
+
         Arguments:
             app_id {string} -- Id of the job launched
-            plugin {string} -- Plugin of the environment where the visualizer will be launched
+            plugin {string} -- Plugin of the
+            environment where the visualizer will be launched
             enable_visualizer {boolean} -- Flag that enables the visualization
             visualizer {int} -- Visualizer type that will be launched
             datasource {int} -- Datasource type of the visualizer launched
-        
+
         Returns:
-            Plugin -- Returns an object that represents a executions of a plugin
+            Plugin -- Returns an object
+            that represents a executions of a plugin
         """
 
         executor = None
         if plugin == "kubejobs" or plugin == "external_api":
             if visualizer == "k8s-grafana":
-                executor = K8sGrafanaProgress(app_id, plugin, enable_visualizer, datasource, user, password, database_data)
+                executor = K8sGrafanaProgress(
+                    app_id,
+                    plugin,
+                    enable_visualizer,
+                    datasource,
+                    user,
+                    password,
+                    database_data)
         else:
             raise ex.BadRequestException()
 

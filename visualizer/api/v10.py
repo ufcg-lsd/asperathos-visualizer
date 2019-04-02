@@ -28,14 +28,16 @@ rest = u.Rest('v10', __name__)
 def start_visualization(data, app_id):
     return u.render(api.start_visualization(data, app_id))
 
+
 """ Returns the url of the visualizer of the job.
-                                                                              
+
     Normal response codes: 200
     Error response codes: 400
 """
 @rest.get('/visualizing/<app_id>')
 def get_visualizer_url(app_id):
     return u.render(api.visualizer_url(app_id))
+
 
 """ Stop the visualization of a running application.
 

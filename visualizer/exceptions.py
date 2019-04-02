@@ -23,6 +23,7 @@ class BadRequestException(Exception):
     code = "BAD_REQUEST"
     message = ("Malformed message body")
 
+
 class Forbidden(Exception):
     code = "FORBIDDEN"
     message = ("You are not authorized to complete this action")
