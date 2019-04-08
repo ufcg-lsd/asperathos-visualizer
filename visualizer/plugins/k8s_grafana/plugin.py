@@ -19,8 +19,8 @@ import time
 
 import kubernetes as kube
 
-from visualizer.service import api
 from visualizer.plugins.base import Plugin
+from visualizer.service import api
 from visualizer.utils.datasources.datasource_influx import InfluxDataSource
 from visualizer.utils.datasources.datasource_monasca import MonascaDataSource
 from visualizer.utils.logger import Log
