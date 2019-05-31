@@ -349,3 +349,6 @@ class K8sGrafanaProgress(Plugin):
             self.LOG.log("Timed out waiting for Grafana to be available.")
             self.LOG.log("Grafana address: %s:%d" % (visualizer_ip, node_port))
             self.datasource.delete_visualizer_resources(app_id)
+
+
+PLUGIN = K8sGrafanaProgress

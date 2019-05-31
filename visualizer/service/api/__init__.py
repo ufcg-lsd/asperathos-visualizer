@@ -18,6 +18,7 @@ import kubernetes as kube
 
 from visualizer.utils import logger
 
+logger.configure_logging()
 CONFIG_PATH = "./data/conf"
 API_LOG = logger.Log('api', 'api.log')
 
