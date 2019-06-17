@@ -15,13 +15,12 @@
 
 from visualizer.utils.logger import Log
 from visualizer import exceptions
-from visualizer.plugins.builder import VisualizerBuilder
+from visualizer.service import plugin_service
 
 
 API_LOG = Log("APIv10", "logs/APIv10.log")
 
 visualized_apps = {}
-builder = VisualizerBuilder()
 
 
 def start_visualization(data, app_id):
@@ -40,7 +39,7 @@ def start_visualization(data, app_id):
         API_LOG.log("Missing parameters in request")
         raise exceptions.BadRequestException()
 
-    plugin = data['plugin']
+    plugin_name = data['plugin']
     enable_visualizer = data['enable_visualizer']
     visualizer_plugin = data['visualizer_plugin']
     datasource_type = data['datasource_type']
@@ -48,20 +47,20 @@ def start_visualization(data, app_id):
     password = data['password']
 
     if app_id not in visualized_apps:
+        plugin = plugin_service.get_plugin(visualizer_plugin)
         if 'database_data' in data:
             database_data = data['database_data']
-            executor = builder.get_visualizer(app_id, plugin,
-                                              enable_visualizer,
-                                              visualizer_plugin,
-                                              datasource_type, user,
-                                              password, database_data)
+            executor = plugin(app_id, plugin_name,
+                              enable_visualizer,
+                              datasource_type, user,
+                              password, database_data)
 
         else:
-            executor = builder.get_visualizer(app_id, plugin,
-                                              enable_visualizer,
-                                              visualizer_plugin,
-                                              datasource_type,
-                                              user, password)
+            executor = plugin(app_id, plugin_name,
+                              enable_visualizer,
+                              visualizer_plugin,
+                              datasource_type,
+                              user, password)
 
         visualized_apps[app_id] = executor
         executor.start_visualization()
@@ -133,3 +132,10 @@ def visualizer_url(app_id):
     except Exception as ex:
         API_LOG.log(ex)
     return {"url": url}
+
+
+def install_plugin(source, plugin):
+    status = plugin_service.install_plugin(source, plugin)
+    if status:
+        return {"message": "Plugin installed successfully"}, 200
+    return {"message": "Error installing plugin"}, 400
