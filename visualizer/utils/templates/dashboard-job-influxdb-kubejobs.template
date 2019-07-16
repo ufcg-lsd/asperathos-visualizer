@@ -38,8 +38,8 @@
   "sharedCrosshair": false,
   "hideControls": false,
   "time": {
-    "from": "now-190m",
-    "to": "now-175m"
+    "from": "now-5m",
+    "to": "now+5m"
   },
   "timepicker": {
     "refresh_intervals": [
@@ -149,7 +149,7 @@
               "type": "fill"
             }
           ],
-          "measurement": "job-progress",
+          "measurement": "job_progress",
           "orderByTime": "ASC",
           "policy": "default",
           "refId": "A",
@@ -192,7 +192,7 @@
               "type": "fill"
             }
           ],
-          "measurement": "time-progress",
+          "measurement": "time_progress",
           "orderByTime": "ASC",
           "policy": "default",
           "refId": "B",
@@ -314,7 +314,7 @@
               "type": "fill"
             }
           ],
-          "measurement": "job-parallelism",
+          "measurement": "job_parallelism",
           "orderByTime": "ASC",
           "policy": "default",
           "refId": "A",
@@ -435,7 +435,7 @@
               "type": "fill"
             }
           ],
-          "measurement": "application-progress.error",
+          "measurement": "application_progress_error",
           "orderByTime": "ASC",
           "policy": "default",
           "refId": "A",
