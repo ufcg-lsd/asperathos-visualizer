@@ -45,6 +45,7 @@ def start_visualization(data, app_id):
     datasource_type = data['datasource_type']
     user = data['username']
     password = data['password']
+    theme = data.get('theme', 'light')
 
     if app_id not in visualized_apps:
         plugin = plugin_service.get_plugin(visualizer_plugin)
@@ -53,14 +54,15 @@ def start_visualization(data, app_id):
             executor = plugin(app_id, plugin_name,
                               enable_visualizer,
                               datasource_type, user,
-                              password, database_data)
+                              password, database_data,
+                              theme)
 
         else:
             executor = plugin(app_id, plugin_name,
                               enable_visualizer,
                               visualizer_plugin,
                               datasource_type,
-                              user, password)
+                              user, password, theme)
 
         visualized_apps[app_id] = executor
         executor.start_visualization()

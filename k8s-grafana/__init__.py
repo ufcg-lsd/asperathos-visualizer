@@ -33,7 +33,8 @@ MONITORING_INTERVAL = 2
 class K8sGrafanaProgress(Plugin):
 
     def __init__(self, app_id, monitor_plugin, enable_visualizer,
-                 datasource_type, user, password, database_data, timeout=60):
+                 datasource_type, user, password, database_data,
+                 theme, timeout=60):
         Plugin.__init__(self, app_id, enable_visualizer, timeout)
         # Compute necessary variables
         kube.config.load_kube_config(api.k8s_conf_path)
@@ -45,6 +46,7 @@ class K8sGrafanaProgress(Plugin):
         self.app_id = app_id
         self.grafana_user = user
         self.grafana_password = password
+        self.grafana_theme = theme
         if datasource_type == 'influxdb':
             self.datasource = InfluxDataSource(
                 monitor_plugin, database_data, app_id)
@@ -340,6 +342,12 @@ class K8sGrafanaProgress(Plugin):
                                                        timeout)
 
             if datasource_created and dashboard_created:
+                self.datasource.change_default_theme(grafana_user,
+                                                     grafana_password,
+                                                     visualizer_ip,
+                                                     node_port,
+                                                     theme=self.grafana_theme)
+
                 return visualizer_ip, node_port
 
             else:
