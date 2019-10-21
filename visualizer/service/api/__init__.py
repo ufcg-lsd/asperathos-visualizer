@@ -77,7 +77,7 @@ try:
             influxdb_datasource_access = config.get("influxdb", "access")
 
 except Exception as e:
-    API_LOG.log("Error: %s" % e.message)
+    API_LOG.log("Error: %s" % e)
     quit()
 
 """ Gets the IP address of one a the node contained
