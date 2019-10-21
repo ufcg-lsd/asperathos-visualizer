@@ -17,6 +17,7 @@
 
 import requests
 import json
+import time
 
 import kubernetes as kube
 
@@ -98,6 +99,34 @@ class InfluxDataSource(Base):
             successful_request = False
 
         return successful_request
+
+    def change_default_theme(self, user, password,
+                             visualizer_ip, node_port,
+                             theme='light', attempts=10):
+
+        url = "http://%s:%s@%s:%s/api/user/preferences" %\
+            (user, password, visualizer_ip, node_port)
+
+        headers = {'content-type': 'application/json'}
+        payload = {
+                "theme": theme,
+                "homeDashboardId": 0,
+                "timezone": ""
+                }
+        payload = json.dumps(payload)
+        try:
+            self.LOG.log("Trying to change default "
+                         "theme to {}... Attempt {}..."
+                         .format(theme, attempts))
+            requests.put(url, data=payload, headers=headers)
+            self.LOG.log("Default theme changed to {}...".format(theme))
+        except Exception as ex:
+            self.LOG.log(ex)
+            if attempts > 0:
+                time.sleep(1)
+                self._change_default_theme(user, password, visualizer_ip,
+                                           node_port, theme=theme,
+                                           attempts=attempts-1)
 
     def delete_visualizer_resources(self,
                                     visualizer_type='grafana',
