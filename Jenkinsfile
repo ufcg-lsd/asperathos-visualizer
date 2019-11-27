@@ -1,10 +1,10 @@
 pipeline {
   agent any
   stages {
-    stage('Unit Python2.7') {
+    stage('Unit Python3.7') {
       agent any
       steps {
-        sh 'tox -epy27'
+        sh 'tox -epy37'
       }
     }
     stage('Pep8') {

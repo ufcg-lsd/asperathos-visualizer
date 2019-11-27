@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ConfigParser
+import configparser
 import kubernetes as kube
 
 from visualizer.utils import logger
@@ -24,7 +24,7 @@ API_LOG = logger.Log('api', 'api.log')
 
 try:
     # Conf reading
-    config = ConfigParser.RawConfigParser()
+    config = configparser.RawConfigParser()
     config.read('./visualizer.cfg')
 
     """ General configuration """
@@ -77,7 +77,7 @@ try:
             influxdb_datasource_access = config.get("influxdb", "access")
 
 except Exception as e:
-    API_LOG.log("Error: %s" % e.message)
+    API_LOG.log("Error: %s" % e)
     quit()
 
 """ Gets the IP address of one a the node contained

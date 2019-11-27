@@ -66,7 +66,10 @@ class TestInfluxDataSource(TestCase):
             "test": "test"
             }
 
-        self.tmp_file.write_text(json.dumps(template).decode('utf-8'))
+        try:
+            self.tmp_file.write_text(json.dumps(template).decode('utf-8'))
+        except AttributeError:
+            self.tmp_file.write_text(json.dumps(template))
         self.influx.dashboard_path = str(self.tmp_file.resolve())
 
         with Mocker() as m:

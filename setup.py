@@ -13,7 +13,7 @@ setup(
     url='',
 
     author='Rafael Falcao, Javan Lacerda',
-    author_email='rafaelfrequent@gmail.com, ',
+    author_email='rafaelfrequent@gmail.com, javkaue@gmail.com',
 
     license='Apache 2.0',
 
