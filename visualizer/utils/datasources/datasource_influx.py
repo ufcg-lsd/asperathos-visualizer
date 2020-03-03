@@ -29,6 +29,8 @@ K8S_TEMPLATE_PATH = \
     './visualizer/utils/templates/dashboard-job-influxdb-kubejobs.template'
 VERTICAL_TEMPLATE_PATH = \
     './visualizer/utils/templates/dashboard-job-influxdb-vertical.template'
+K8S_COST_TEMPLATE_PATH = \
+    './visualizer/utils/templates/dashboard-job-influxdb-kubejobs-cost.template'
 
 LOG_FILE = "influx-ds.log"
 LOG_NAME = "influx-ds"
@@ -47,6 +49,9 @@ class InfluxDataSource(Base):
         self.database_name = database_data['name']
         if(monitor_plugin == 'kubejobs'):
             self.dashboard_path = K8S_TEMPLATE_PATH
+        
+        elif(monitor_plugin == 'kubejobs_cost'):
+            self.dashboard_path = K8S_COST_TEMPLATE_PATH
 
         elif(monitor_plugin == 'external_api'):
             self.dashboard_path = VERTICAL_TEMPLATE_PATH
