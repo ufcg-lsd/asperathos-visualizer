@@ -109,7 +109,7 @@ def stop_visualization(data, app_id):
         raise exceptions.BadRequestException()
 
     plugin = data['plugin']
-    if plugin == 'kubejobs':
+    if plugin == 'kubejobs' or plugin == 'kubejobs_cost':
         # Call the executor by app_id and stop the visualization.
         visualized_apps[app_id].stop_visualization()
 
