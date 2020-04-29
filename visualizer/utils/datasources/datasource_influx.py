@@ -46,7 +46,8 @@ class InfluxDataSource(Base):
         self.datasource_port = database_data['port']
         self.database_name = database_data['name']
         # TODO We need to think in a better design for this
-        if(monitor_plugin == 'kubejobs' or monitor_plugin == 'stream_kubejobs'):
+        if(monitor_plugin == 'kubejobs' or
+                monitor_plugin == 'stream_kubejobs'):
             self.dashboard_path = K8S_TEMPLATE_PATH
 
         elif(monitor_plugin == 'external_api'):
