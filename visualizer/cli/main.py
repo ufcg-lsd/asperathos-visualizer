@@ -16,9 +16,11 @@
 from flask import Flask
 from visualizer.api.v10 import rest
 from visualizer.service import api
+from visualizer.utils import logger
 
 
 def main():
     app = Flask(__name__)
     app.register_blueprint(rest)
+    logger.configure_logging()
     app.run(host='0.0.0.0', port=api.port, debug=True)
