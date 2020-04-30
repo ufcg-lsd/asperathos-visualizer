@@ -3,8 +3,9 @@ mock
 six
 python-monascaclient==1.5.0
 pytest
+pytest-cov
 requests_mock
 kubernetes==8.0.0
 flake8
-urllib3==1.22
+urllib3==1.24.2
 
