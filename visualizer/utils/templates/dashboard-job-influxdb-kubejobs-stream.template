@@ -100,7 +100,7 @@
       "fill": 1,
       "gridPos": {
         "h": 7,
-        "w": 8,
+        "w": 12,
         "x": 0,
         "y": 0
       },
@@ -261,7 +261,7 @@
       "timeFrom": null,
       "timeRegions": [],
       "timeShift": null,
-      "title": "Input flux vs Real Output vs Expected Output",
+      "title": "Input flux vs Output flux",
       "tooltip": {
         "shared": true,
         "sort": 0,
@@ -308,8 +308,8 @@
       "fill": 1,
       "gridPos": {
         "h": 7,
-        "w": 8,
-        "x": 8,
+        "w": 12,
+        "x": 12,
         "y": 0
       },
       "id": 6,
@@ -429,11 +429,11 @@
       "fill": 1,
       "gridPos": {
         "h": 7,
-        "w": 8,
-        "x": 16,
-        "y": 0
+        "w": 12,
+        "x": 0,
+        "y": 7
       },
-      "id": 8,
+      "id": 7,
       "legend": {
         "avg": false,
         "current": false,
@@ -505,6 +505,127 @@
       "timeRegions": [],
       "timeShift": null,
       "title": "Error",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "InfluxDB",
+      "fill": 1,
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 12,
+        "y": 7
+      },
+      "id": 8,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "connected",
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "alias": "queue_sizes",
+          "groupBy": [
+            {
+              "params": [
+                "$__interval"
+              ],
+              "type": "time"
+            },
+            {
+              "params": [
+                "job"
+              ],
+              "type": "tag"
+            },
+            {
+              "params": [
+                "null"
+              ],
+              "type": "fill"
+            }
+          ],
+          "measurement": "queue_size",
+          "orderByTime": "ASC",
+          "policy": "default",
+          "refId": "A",
+          "resultFormat": "time_series",
+          "select": [
+            [
+              {
+                "params": [
+                  "value"
+                ],
+                "type": "field"
+              },
+              {
+                "params": [],
+                "type": "mean"
+              }
+            ]
+          ],
+          "tags": []
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "Queue size",
       "tooltip": {
         "shared": true,
         "sort": 0,
