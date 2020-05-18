@@ -38,8 +38,8 @@
   "sharedCrosshair": false,
   "hideControls": false,
   "time": {
-    "from": "now-5m",
-    "to": "now+5m"
+    "from": "now/m",
+    "to": "now/m"
   },
   "timepicker": {
     "refresh_intervals": [
