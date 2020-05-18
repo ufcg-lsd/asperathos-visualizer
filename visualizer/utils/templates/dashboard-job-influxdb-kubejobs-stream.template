@@ -128,7 +128,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "alias": "$tag_job>input_flux",
+          "alias": "input_flux",
           "groupBy": [
             {
               "params": [
@@ -171,7 +171,7 @@
           "tags": []
         },
         {
-          "alias": "$tag_job>real_output_flux",
+          "alias": "real_output_flux",
           "groupBy": [
             {
               "params": [
@@ -214,7 +214,7 @@
           "tags": []
         },
         {
-          "alias": "$tag_job>expected_output_flux",
+          "alias": "expected_output_flux",
           "groupBy": [
             {
               "params": [
@@ -336,7 +336,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "alias": "$tag_job>job_parallelism",
+          "alias": "job_parallelism",
           "groupBy": [
             {
               "params": [
@@ -457,7 +457,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "alias": "$tag_job> application_progress_error",
+          "alias": " application_progress_error",
           "groupBy": [
             {
               "params": [
