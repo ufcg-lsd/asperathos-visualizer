@@ -58,6 +58,9 @@ class InfluxDataSource(Base):
         elif(monitor_plugin == 'kubejobs_cost'):
             self.dashboard_path = K8S_COST_TEMPLATE_PATH
 
+        elif monitor_plugin == "kubejobs_replica_cost":
+            self.dashboard_path = K8S_COST_TEMPLATE_PATH
+
         elif(monitor_plugin == 'external_api'):
             self.dashboard_path = VERTICAL_TEMPLATE_PATH
         

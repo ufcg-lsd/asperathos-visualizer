@@ -113,7 +113,8 @@ def stop_visualization(data, app_id):
     # TODO We need to think in a better design for this
     if plugin == 'kubejobs'\
         or plugin == 'kubejobs_cost'\
-            or plugin == 'stream_kubejobs':
+            or plugin == 'stream_kubejobs'\
+                or plugin == 'kubejobs_replica_cost':
         # Call the executor by app_id and stop the visualization.
         visualized_apps[app_id].stop_visualization()
 
