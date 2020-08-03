@@ -32,6 +32,9 @@ VERTICAL_TEMPLATE_PATH = \
 K8S_COST_TEMPLATE_PATH = \
     './visualizer/utils/templates/' \
     'dashboard-job-influxdb-kubejobs-cost.template'
+K8S_STREAM_TEMPLATE_PATH = \
+    './visualizer/utils/templates/' \
+    'dashboard-job-influxdb-kubejobs-stream.template'
 
 LOG_FILE = "influx-ds.log"
 LOG_NAME = "influx-ds"
@@ -49,8 +52,7 @@ class InfluxDataSource(Base):
         self.datasource_port = database_data['port']
         self.database_name = database_data['name']
         # TODO We need to think in a better design for this
-        if(monitor_plugin == 'kubejobs' or
-                monitor_plugin == 'stream_kubejobs'):
+        if(monitor_plugin == 'kubejobs'):
             self.dashboard_path = K8S_TEMPLATE_PATH
 
         elif(monitor_plugin == 'kubejobs_cost'):
@@ -58,6 +60,9 @@ class InfluxDataSource(Base):
 
         elif(monitor_plugin == 'external_api'):
             self.dashboard_path = VERTICAL_TEMPLATE_PATH
+        
+        elif(monitor_plugin == 'stream_kubejobs' ):
+            self.dashboard_path = K8S_STREAM_TEMPLATE_PATH
 
         self.image = 'grafana/grafana:5.4.2'
 
