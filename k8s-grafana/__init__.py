@@ -41,7 +41,7 @@ class K8sGrafanaProgress(Plugin):
         self.LOG = Log(LOG_NAME, LOG_FILE)
         self.visualizer_url = "URL not generated!"
         self.datasource = datasource_type
-        self.monitor_plugin = monitor_plugin
+        self.monitor_plugin = monitor_plugin['module']
         self.enable_visualization = enable_visualizer
         self.app_id = app_id
         self.grafana_user = user
@@ -49,7 +49,7 @@ class K8sGrafanaProgress(Plugin):
         self.grafana_theme = theme
         if datasource_type == 'influxdb':
             self.datasource = InfluxDataSource(
-                monitor_plugin, database_data, app_id)
+                monitor_plugin['module'], database_data, app_id)
         elif datasource_type == 'monasca':
             self.datasource = MonascaDataSource(app_id)
         else:
@@ -284,7 +284,7 @@ class K8sGrafanaProgress(Plugin):
             "Trying to generate dashboard for Grafana on %s:%d..." %
             (visualizer_ip, node_port))
         while time.time() - start < timeout:
-            time.sleep(5)
+            time.sleep(2)
             dashboard_result = self.datasource.create_grafana_dashboard(
                 grafana_user, grafana_password, visualizer_ip, node_port)
             if(dashboard_result):

@@ -48,7 +48,11 @@ def start_visualization(data, app_id):
     theme = data.get('theme', 'light')
 
     if app_id not in visualized_apps:
-        plugin = plugin_service.get_plugin(visualizer_plugin)
+        try:
+            plugin = plugin_service.get_plugin(visualizer_plugin['module'])
+        except ImportError:
+            plugin_service.install_plugin(visualizer_plugin['source'], visualizer_plugin['plugin_source'])
+            plugin = plugin_service.get_plugin(visualizer_plugin['module'])
         if 'database_data' in data:
             database_data = data['database_data']
             executor = plugin(app_id, plugin_name,
